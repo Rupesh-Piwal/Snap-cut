@@ -1,0 +1,356 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+    createAudioMixer,
+    createRecordingBlob,
+    setupRecording,
+} from "../record-utils";
+import { BunnyRecordingState, ExtendedMediaStream } from "../types";
+
+// Configuration Constants
+const CANVAS_WIDTH = 1920;
+const CANVAS_HEIGHT = 1080;
+const FRAME_RATE = 60;
+const WEBCAM_WIDTH = 320; // Default width
+const PADDING = 20;
+
+export interface WebcamConfig {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export const usePiPRecording = () => {
+    const [state, setState] = useState<BunnyRecordingState>({
+        isRecording: false,
+        recordedBlob: null,
+        recordedVideoUrl: "",
+        recordingDuration: 0,
+    });
+
+    const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
+
+    // Refs for persistent objects across renders
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+    const startTimeRef = useRef<number | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
+
+    // Source Refs
+    const screenStreamRef = useRef<MediaStream | null>(null);
+    const webcamStreamRef = useRef<MediaStream | null>(null);
+    const screenVideoRef = useRef<HTMLVideoElement | null>(null);
+    const webcamVideoRef = useRef<HTMLVideoElement | null>(null);
+
+    // Initial config: Positioned bottom-right by default
+    const webcamConfigRef = useRef<WebcamConfig>({
+        x: CANVAS_WIDTH - WEBCAM_WIDTH - PADDING,
+        y: CANVAS_HEIGHT - WEBCAM_WIDTH - PADDING, // Square 1:1
+        width: WEBCAM_WIDTH,
+        height: WEBCAM_WIDTH // Square 1:1
+    });
+
+    const setWebcamConfig = useCallback((config: Partial<WebcamConfig>) => {
+        webcamConfigRef.current = { ...webcamConfigRef.current, ...config };
+    }, []);
+
+    // --- 1. Helper: Draw Loop (The Compositor) ---
+    const drawFrame = useCallback(() => {
+        const ctx = ctxRef.current;
+        const canvas = canvasRef.current;
+        const screenVideo = screenVideoRef.current;
+        const webcamVideo = webcamVideoRef.current;
+
+        if (!ctx || !canvas || !screenVideo) return;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // Draw Screen (Background) - Stretch to fit 1920x1080
+        ctx.drawImage(screenVideo, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // Draw Webcam (PiP)
+        if (webcamVideo && webcamVideo.readyState === 4) {
+            const { x, y, width, height } = webcamConfigRef.current;
+
+            // Enforce square aspect ratio for circular cut
+            const size = Math.min(width, height);
+            const radius = size / 2;
+            const cx = x + radius;
+            const cy = y + radius;
+
+            ctx.save();
+
+            // 1. Define Path for Clipping & Border
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.closePath();
+
+            // 2. Add Shadow (Applied to whatever is drawn next, effectively the clipped image)
+            // Note: Shadow on a clipped image can be tricky. 
+            // Better to draw a shadow circle behind the image first.
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetY = 4;
+            ctx.fillStyle = "rgba(0,0,0,0.1)"; // Invisible fill just to cast shadow? 
+            // Actually, let's just draw the Video with clip. 
+            // Shadows with clip can be buggy in some browsers. 
+            // Let's draw a dark circle behind first for the shadow effect.
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.fill();
+
+            // Clear shadow for the video itself
+            ctx.shadowColor = "transparent";
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // 3. Clip
+            ctx.clip();
+
+            // 4. Draw Video (Object-Fit: Cover)
+            const vw = webcamVideo.videoWidth;
+            const vh = webcamVideo.videoHeight;
+            const videoAspect = vw / vh;
+            const destAspect = 1; // Circle is 1:1
+
+            let sx = 0, sy = 0, sw = vw, sh = vh;
+
+            if (videoAspect > destAspect) {
+                // Video is wider -> crop sides
+                sw = vh * destAspect;
+                sx = (vw - sw) / 2;
+            } else {
+                // Video is taller -> crop top/bottom
+                sh = vw / destAspect;
+                sy = (vh - sh) / 2;
+            }
+
+            ctx.drawImage(webcamVideo, sx, sy, sw, sh, x, y, size, size);
+
+            // 5. Restore (removes clip)
+            ctx.restore();
+
+            // 6. Reuse path for Border (after restore so it's not clipped if stroke is wide)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "white";
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        animationFrameRef.current = requestAnimationFrame(drawFrame);
+    }, []);
+
+    // --- 2. Helper: Cleanup ---
+    const cleanup = useCallback(() => {
+        // Stop Animation
+        if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+        }
+
+        // Stop MediaRecorder
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+        }
+
+        // Stop Tracks
+        [screenStreamRef.current, webcamStreamRef.current].forEach((stream) => {
+            stream?.getTracks().forEach((track) => track.stop());
+        });
+
+        // Close Audio Context
+        if (audioContextRef.current) {
+            audioContextRef.current.close();
+            audioContextRef.current = null;
+        }
+
+        // Clear Video Elements
+        if (screenVideoRef.current) {
+            screenVideoRef.current.srcObject = null;
+            screenVideoRef.current = null;
+        }
+        if (webcamVideoRef.current) {
+            webcamVideoRef.current.srcObject = null;
+            webcamVideoRef.current = null;
+        }
+    }, []);
+
+    // --- 3. Start Recording ---
+    const startRecording = async (withWebcam: boolean = true) => {
+        try {
+            // Cleanup previous session if any
+            cleanup();
+            setState((prev) => ({ ...prev, recordedVideoUrl: "", recordedBlob: null }));
+
+            // A. Get Streams
+            // 1. Screen (Display Media) - 1080p 60fps preferred
+            const displayStream = await navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    width: { ideal: CANVAS_WIDTH },
+                    height: { ideal: CANVAS_HEIGHT },
+                    frameRate: { ideal: FRAME_RATE },
+                },
+                audio: true, // System audio
+            });
+            screenStreamRef.current = displayStream;
+
+            // 2. Webcam (User Media) - Only if requested
+            let userStream: MediaStream | null = null;
+            if (withWebcam) {
+                try {
+                    userStream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 1280, height: 720 },
+                        audio: true, // Mic audio
+                    });
+                    webcamStreamRef.current = userStream;
+                } catch (err) {
+                    console.warn("Could not get webcam/mic:", err);
+                }
+            }
+
+            // Handle user stopping screen share via browser UI
+            displayStream.getVideoTracks()[0].onended = () => {
+                stopRecording();
+            };
+
+            // B. Setup Hidden Video Elements (Decoders)
+            // Screen Video
+            const sVideo = document.createElement("video");
+            sVideo.srcObject = displayStream;
+            sVideo.muted = true; // IMPORTANT: loops won't play if not muted usually, plus we handle audio separately
+            sVideo.playsInline = true;
+            await sVideo.play();
+            screenVideoRef.current = sVideo;
+
+            // Webcam Video
+            if (userStream) {
+                const wVideo = document.createElement("video");
+                // We only want the video track for the video element to avoid echo
+                const videoOnlyStream = new MediaStream(userStream.getVideoTracks());
+                wVideo.srcObject = videoOnlyStream; // Only attach video track
+                wVideo.muted = true;
+                wVideo.playsInline = true;
+                await wVideo.play();
+                webcamVideoRef.current = wVideo;
+            }
+
+            // C. Setup Canvas Compositor
+            const canvas = document.createElement("canvas");
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+            canvasRef.current = canvas;
+            // Removed alpha: false to avoid potential optimization bugs with clipping/transparency interactions
+            ctxRef.current = canvas.getContext("2d");
+
+            // Start loop
+            drawFrame();
+
+            // D. Audio Mixing
+            const hasDisplayAudio = displayStream.getAudioTracks().length > 0;
+            audioContextRef.current = new AudioContext();
+
+            const mixedAudioDest = createAudioMixer(
+                audioContextRef.current,
+                displayStream,
+                userStream,
+                hasDisplayAudio
+            );
+
+            // E. Create Final Stream
+            const canvasStream = canvas.captureStream(FRAME_RATE);
+            const finalStream = new MediaStream();
+
+            // Add Video Track from Canvas
+            canvasStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
+
+            // Add Mixed Audio Track
+            if (mixedAudioDest) {
+                mixedAudioDest.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+            } else {
+                // Fallback if mixer failed or no audio, try to add tracks directly if exists (unmixed)
+                // ideally createAudioMixer handles scenarios, but as fallback:
+                displayStream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+                userStream?.getAudioTracks().forEach(track => finalStream.addTrack(track));
+            }
+
+            setPreviewStream(finalStream); // Optional: if we want to show it somewhere
+
+            // F. Setup MediaRecorder
+            chunksRef.current = [];
+            mediaRecorderRef.current = setupRecording(finalStream, {
+                onDataAvailable: (e) => {
+                    if (e.data.size > 0) chunksRef.current.push(e.data);
+                },
+                onStop: () => {
+                    const { blob, url } = createRecordingBlob(chunksRef.current);
+                    setState(prev => ({
+                        ...prev,
+                        recordedBlob: blob,
+                        recordedVideoUrl: url,
+                        isRecording: false
+                    }));
+                    cleanup(); // Full cleanup after stop
+                }
+            });
+
+            // Start Recording
+            mediaRecorderRef.current.start(1000); // 1s timeslice
+            startTimeRef.current = Date.now();
+            setState((prev) => ({ ...prev, isRecording: true, recordingDuration: 0 }));
+
+        } catch (error) {
+            console.error("Failed to start recording:", error);
+            cleanup();
+        }
+    };
+
+    const stopRecording = useCallback(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+        } else {
+            cleanup();
+        }
+    }, [cleanup]);
+
+    const resetRecording = useCallback(() => {
+        stopRecording();
+        setState({
+            isRecording: false,
+            recordedBlob: null,
+            recordedVideoUrl: "",
+            recordingDuration: 0,
+        });
+    }, [stopRecording]);
+
+    // Duration Timer
+    useEffect(() => {
+        if (!state.isRecording || !startTimeRef.current) return;
+        const interval = setInterval(() => {
+            const duration = Math.floor((Date.now() - startTimeRef.current!) / 1000);
+            setState(prev => ({ ...prev, recordingDuration: duration }));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [state.isRecording]);
+
+    // Unmount Cleanup
+    useEffect(() => {
+        return () => cleanup();
+    }, []);
+
+    return {
+        ...state,
+        previewStream,
+        startRecording,
+        stopRecording,
+        resetRecording,
+        setWebcamConfig,
+        canvasDimensions: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT }
+    };
+};

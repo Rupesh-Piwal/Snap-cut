@@ -19,3 +19,15 @@ export type BunnyRecordingState = {
 export type ExtendedMediaStream = MediaStream & {
   _originalStreams?: MediaStream[];
 };
+
+export type RecordingSession = {
+  meta: {
+    startedAt: number;
+    duration: number;
+    viewport: {
+      width: number;
+      height: number;
+    };
+  };
+  video: Blob;
+};

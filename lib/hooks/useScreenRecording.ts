@@ -5,7 +5,7 @@ import {
   createRecordingBlob,
   getMediaStreams,
   setupRecording,
-} from "../utils";
+} from "../record-utils";
 import { BunnyRecordingState, ExtendedMediaStream } from "../types";
 
 export const useScreenRecording = () => {
@@ -15,6 +15,7 @@ export const useScreenRecording = () => {
     recordedVideoUrl: "",
     recordingDuration: 0, // seconds
   });
+  const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<ExtendedMediaStream | null>(null);
@@ -125,6 +126,9 @@ export const useScreenRecording = () => {
         recordingDuration: 0,
       }));
 
+      streamRef.current = combinedStream;
+      setPreviewStream(combinedStream);
+
       return true;
     } catch (error) {
       console.error("Recording error:", error);
@@ -144,6 +148,8 @@ export const useScreenRecording = () => {
 
     streamRef.current = null;
 
+    setPreviewStream(null);
+
     setState((prev) => ({
       ...prev,
       isRecording: false,
@@ -160,6 +166,8 @@ export const useScreenRecording = () => {
       URL.revokeObjectURL(state.recordedVideoUrl);
     }
 
+    setPreviewStream(null);
+
     startTimeRef.current = null;
     chunksRef.current = [];
 
@@ -173,6 +181,7 @@ export const useScreenRecording = () => {
 
   return {
     ...state,
+    previewStream,
     startRecording,
     stopRecording,
     resetRecording,
