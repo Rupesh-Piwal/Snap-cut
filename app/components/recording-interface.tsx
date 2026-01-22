@@ -403,7 +403,7 @@ export default function RecordingInterface() {
                 <div className="flex flex-col items-center gap-2 group">
                   <button
                     onClick={handleStartRecording}
-                    className="relative w-14 h-14 rounded-full bg-gradient-to-br from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl hover:shadow-red-500/30 transition-all duration-300 ease-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-500/40"
+                    className="relative w-14 h-14 rounded-full bg-linear-to-br from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl hover:shadow-red-500/30 transition-all duration-300 ease-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-500/40"
                     aria-label="Start recording"
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -421,7 +421,7 @@ export default function RecordingInterface() {
                 <div className="flex flex-col items-center gap-2 group">
                   <button
                     onClick={handleStopRecording}
-                    className="relative w-14 h-14 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white shadow-xl hover:shadow-2xl transition-all duration-300 ease-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-gray-500/40"
+                    className="relative w-14 h-14 rounded-full bg-linear-to-br from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white shadow-xl hover:shadow-2xl transition-all duration-300 ease-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-gray-500/40"
                     aria-label="Stop recording"
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
