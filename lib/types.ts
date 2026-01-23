@@ -9,11 +9,22 @@ export type RecordingHandlers = {
   onStop: () => void;
 };
 
+// Strict State Machine Definition
+export type RecordingState =
+  | "idle"
+  | "initializing"
+  | "recording"
+  | "stopping"
+  | "completed"
+  | "error";
+
 export type BunnyRecordingState = {
-  isRecording: boolean;
+  status: RecordingState;
+  isRecording: boolean; // Derived helper
   recordedBlob: Blob | null;
   recordedVideoUrl: string;
   recordingDuration: number;
+  error: Error | null;
 };
 
 export type ExtendedMediaStream = MediaStream & {
