@@ -141,7 +141,7 @@ export function RecorderView({
             <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative">
                 <div
                     ref={containerRef}
-                    className="relative w-full max-w-6xl aspect-video bg-[#3c4043] rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5 group"
+                    className="relative w-full max-w-6xl h-[calc(100vh-124px)] aspect-video bg-[#3c4043] rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5 group"
                 >
                     <video
                         ref={previewVideoRef}
@@ -210,6 +210,10 @@ export function RecorderView({
                 onStopRecording={onStopRecording}
                 webcamEnabled={webcamEnabled}
                 onToggleWebcam={onToggleWebcam}
+                recordingDuration={recordingDuration}
+                onReset={() => { }} // No-op for now as we don't have reset exposed in the hook yet
+                onPause={() => { }} // No-op
+                onDelete={() => { }} // No-op
             />
         </div>
     );

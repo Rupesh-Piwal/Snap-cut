@@ -111,7 +111,7 @@ export default function RecordingInterface() {
   // 2. RECORDING / IDLE VIEW
   if (status === "idle" || status === "recording") {
     return (
-      <main className="flex-1 w-full h-screen bg-background">
+      <main className="flex-1 max-w-7xl mx-auto h-screen bg-background border-2 border-yellow-500">
         <RecorderView
           status={status}
           webcamEnabled={webcamEnabled}

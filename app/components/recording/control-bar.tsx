@@ -1,13 +1,32 @@
-import React from "react";
-import { Mic, Video, VideoOff } from "lucide-react";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+    Mic,
+    Video,
+    VideoOff,
+    GripVertical,
+    Square,
+    RotateCcw,
+    Pause,
+    Trash2,
+    Pen,
+    MousePointer2,
+    Target,
+    Play
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ControlBarProps {
-    status: "idle" | "dest" | "initializing" | "recording" | "stopping" | "completed" | "error"; // broad type to be safe, or narrow it
+    status: "idle" | "dest" | "initializing" | "recording" | "stopping" | "completed" | "error";
     onStartRecording: () => void;
     onStopRecording: () => void;
     webcamEnabled: boolean;
     onToggleWebcam: () => void;
+    recordingDuration?: number; // Pass duration for the timer if available
+    onReset?: () => void;
+    onPause?: () => void;
+    onDelete?: () => void;
 }
 
 export function ControlBar({
@@ -16,85 +35,122 @@ export function ControlBar({
     onStopRecording,
     webcamEnabled,
     onToggleWebcam,
+    recordingDuration = 0,
+    onReset,
+    onPause,
+    onDelete,
 }: ControlBarProps) {
+    const [formattedTime, setFormattedTime] = useState("00:00");
+
+    useEffect(() => {
+        const mins = Math.floor(recordingDuration / 60);
+        const secs = recordingDuration % 60;
+        setFormattedTime(`${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`);
+    }, [recordingDuration]);
+
+    if (status === "idle") {
+        return (
+            <div className="h-24 flex items-center justify-center">
+                <button
+                    onClick={onStartRecording}
+                    className="group relative flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-full shadow-lg hover:shadow-red-500/30 transition-all duration-300 transform hover:scale-105"
+                >
+                    <div className="w-4 h-4 rounded-full bg-white animate-pulse" />
+                    <span className="font-semibold text-lg">Start Recording</span>
+                </button>
+            </div>
+        );
+    }
+
     return (
-        <div className="h-24 shrink-0 flex items-center justify-center gap-4 pb-4 px-4 bg-[#202124]">
-            {status === "idle" ? (
-                <div className="flex flex-col items-center gap-2 group">
-                    <button
-                        onClick={onStartRecording}
-                        className="relative w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-xl hover:shadow-red-500/30 transition-all duration-300 ease-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-500/40"
-                    >
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full bg-white shadow-sm" />
-                        </div>
-                    </button>
-                    <span className="text-xs font-medium text-gray-400">Start Recording</span>
-                </div>
-            ) : (
-                <div className="flex flex-col items-center gap-2 group">
+        <div className="h-24 flex items-center justify-center pointer-events-none">
+            {/* Floating Bar Container */}
+            <div className="pointer-events-auto bg-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-2 flex items-center gap-4 animate-in slide-in-from-bottom-10 fade-in duration-500">
+
+
+                {/* Main Controls Group */}
+                <div className="flex items-center bg-[#F3F4F6] rounded-full px-1.5 py-1.5 gap-1">
+                    {/* Stop Button */}
                     <button
                         onClick={onStopRecording}
-                        className="relative w-16 h-16 rounded-full bg-white hover:bg-gray-100 text-red-600 shadow-xl transition-all duration-300 ease-out transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-white/40"
+                        className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white hover:shadow-sm transition-all text-gray-500 hover:text-red-600 group"
+                        title="Stop Recording"
                     >
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-red-600 rounded-sm" />
+                        <div className="w-10 h-10 flex items-center justify-center bg-gray-400/50 rounded-full group-hover:bg-red-100 transition-colors">
+                            <div className="w-3.5 h-3.5 bg-white rounded-[2px] shadow-sm transform group-hover:scale-110 transition-transform" />
                         </div>
                     </button>
-                    <span className="text-xs font-medium text-gray-400">Stop Recording</span>
-                </div>
-            )}
-            <div className="w-px h-10 bg-white/10 mx-4" />
-            <ControlBtn icon={Mic} label="Mic" active={true} />
-            <ControlBtn
-                icon={webcamEnabled ? Video : VideoOff}
-                label={webcamEnabled ? "Cam On" : "Cam Off"}
-                active={webcamEnabled}
-                onClick={onToggleWebcam}
-                offState={!webcamEnabled}
-            />
-        </div>
-    );
-}
 
-function ControlBtn({
-    icon: Icon,
-    label,
-    onClick,
-    active = false,
-    offState = false,
-    variant = "default",
-}: {
-    icon: any;
-    label: string;
-    onClick?: () => void;
-    active?: boolean;
-    offState?: boolean;
-    variant?: "default" | "danger";
-}) {
-    return (
-        <button
-            onClick={onClick}
-            className={cn(
-                "flex flex-col items-center gap-1.5 group min-w-[3.5rem]",
-                offState ? "opacity-70" : "opacity-100"
-            )}
-        >
-            <div
-                className={cn(
-                    "h-10 w-10 rounded-full flex items-center justify-center transition-all duration-200",
-                    variant === "danger"
-                        ? "bg-red-500/20 text-red-500 hover:bg-red-500/30"
-                        : active
-                            ? "bg-white/10 text-white hover:bg-white/20"
-                            : "bg-transparent text-gray-400 hover:bg-white/5"
-                )}
-            >
-                <Icon className="w-5 h-5" />
+                    {/* Timer */}
+                    <div className="px-3 font-mono text-gray-700 font-medium min-w-[60px] text-center select-none">
+                        {formattedTime}
+                    </div>
+
+                    {/* Restart */}
+                    <button
+                        onClick={onReset}
+                        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-900 hover:bg-white hover:shadow-sm transition-all"
+                        title="Restart"
+                    >
+                        <RotateCcw className="w-4 h-4" />
+                    </button>
+
+                    {/* Pause */}
+                    <button
+                        onClick={onPause}
+                        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-900 hover:bg-white hover:shadow-sm transition-all"
+                        title="Pause"
+                    >
+                        <Pause className="w-4 h-4" />
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                        onClick={onDelete}
+                        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-600 hover:bg-white hover:shadow-sm transition-all"
+                        title="Delete"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* Divider */}
+                <div className="w-px h-8 bg-gray-200" />
+
+                {/* Tools Group */}
+                <div className="text-gray-400">
+                    <button className="w-9 h-9 flex items-center justify-center rounded-full hover:text-indigo-600 hover:bg-indigo-50 transition-all">
+                        <Pen className="w-4.5 h-4.5" />
+                    </button>
+                </div>
+
+                {/* Divider */}
+                <div className="w-px h-8 bg-gray-200" />
+
+                {/* Toggles Group */}
+                <div className="flex items-center gap-2 pr-1">
+                    {/* Cam Toggle (Mapped to Pen/Tools area in image? I will keep it separate or next to Mic as it is essential) */}
+                    {/* The image doesn't explicitly show cam, but we need it. I'll make it subtle or similar to Mic */}
+                    <button
+                        onClick={onToggleWebcam}
+                        className={cn(
+                            "w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200",
+                            webcamEnabled
+                                ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
+                                : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                        )}
+                        title="Toggle Webcam"
+                    >
+                        {webcamEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                    </button>
+
+                    {/* Mic Toggle */}
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600 cursor-pointer hover:bg-green-200 transition-colors">
+                        <Mic className="w-5 h-5" />
+                    </div>
+                </div>
+
             </div>
-            <span className="text-[10px] font-medium text-gray-400 group-hover:text-gray-300 transition-colors">
-                {label}
-            </span>
-        </button>
+        </div>
     );
 }
