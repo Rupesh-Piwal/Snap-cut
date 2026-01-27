@@ -1,19 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Mic,
   Video,
   VideoOff,
-  GripVertical,
-  Square,
   RotateCcw,
   Pause,
   Trash2,
   Pen,
-  MousePointer2,
-  Target,
-  Play,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +25,8 @@ interface ControlBarProps {
   onStopRecording: () => void;
   webcamEnabled: boolean;
   onToggleWebcam: () => void;
+  micEnabled: boolean;
+  onToggleMic: () => void;
   recordingDuration?: number; // Pass duration for the timer if available
   onReset?: () => void;
   onPause?: () => void;
@@ -42,6 +39,8 @@ export function ControlBar({
   onStopRecording,
   webcamEnabled,
   onToggleWebcam,
+  micEnabled,
+  onToggleMic,
   recordingDuration = 0,
   onReset,
   onPause,
@@ -59,36 +58,56 @@ export function ControlBar({
 
   if (status === "idle") {
     return (
-      <div className="h-24 flex flex-col items-center justify-center pb-6 gap-4">
-        {/* Webcam Toggle - Before Recording */}
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-center gap-8 pb-10">
+        {/* Record/Start Button */}
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={onStartRecording}
+            className="w-[180px] h-20 bg-[#f84d4d] hover:bg-[#ff5f5f] text-white rounded-[24px] flex items-center justify-center gap-2 transition-all duration-200 shadow-lg group"
+          >
+            <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+              <div className="w-2.5 h-2.5 bg-[#f84d4d] rounded-full group-hover:scale-90 transition-transform" />
+            </div>
+            <span className="text-xl font-bold tracking-tight">Record</span>
+          </button>
+          <span className="text-sm font-medium text-gray-400">Start</span>
+        </div>
+
+        {/* Mic Toggle */}
+        <div className="flex flex-col items-center gap-2">
+          <button
+            onClick={onToggleMic}
+            className={cn(
+              "w-20 h-20 flex items-center justify-center rounded-[24px] transition-all duration-200",
+              micEnabled
+                ? "bg-[#2a2a2a] text-white hover:bg-[#333333]"
+                : "bg-[#2a2a2a]/40 text-gray-600 hover:bg-[#2a2a2a]/60",
+            )}
+          >
+            <Mic className={cn("w-8 h-8", !micEnabled && "opacity-40")} />
+          </button>
+          <span className="text-sm font-medium text-gray-400">Mic</span>
+        </div>
+
+        {/* Cam Toggle */}
+        <div className="flex flex-col items-center gap-2">
           <button
             onClick={onToggleWebcam}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium",
+              "w-20 h-20 flex items-center justify-center rounded-[24px] transition-all duration-200",
               webcamEnabled
-                ? "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 ring-1 ring-purple-500/30"
-                : "bg-white/10 text-white/50 hover:bg-white/20",
+                ? "bg-[#2a2a2a] text-white hover:bg-[#333333]"
+                : "bg-[#2a2a2a]/40 text-gray-600 hover:bg-[#2a2a2a]/60",
             )}
-            title="Toggle Webcam"
           >
             {webcamEnabled ? (
-              <Video className="w-4 h-4" />
+              <Video className="w-8 h-8" />
             ) : (
-              <VideoOff className="w-4 h-4" />
+              <VideoOff className="w-8 h-8 opacity-40" />
             )}
-            <span>{webcamEnabled ? "Webcam On" : "Webcam Off"}</span>
           </button>
+          <span className="text-sm font-medium text-gray-400">Cam</span>
         </div>
-
-        {/* Start Button */}
-        <button
-          onClick={onStartRecording}
-          className="group relative flex items-center justify-center gap-3 bg-white hover:bg-white/95 text-black px-8 py-3.5 rounded-full hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer font-semibold text-base"
-        >
-          <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-          <span>Start Recording</span>
-        </button>
       </div>
     );
   }
@@ -177,9 +196,18 @@ export function ControlBar({
           </button>
 
           {/* Mic Toggle */}
-          <div className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 cursor-pointer hover:bg-emerald-500/30 transition-all duration-200 ring-1 ring-emerald-500/30">
-            <Mic className="w-4 h-4" />
-          </div>
+          <button
+            onClick={onToggleMic}
+            className={cn(
+              "w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200",
+              micEnabled
+                ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 ring-1 ring-emerald-500/30"
+                : "bg-white/10 text-white/40 hover:bg-white/20",
+            )}
+            title="Toggle Microphone"
+          >
+            <Mic className={cn("w-4 h-4", !micEnabled && "opacity-40")} />
+          </button>
         </div>
       </div>
     </div>

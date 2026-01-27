@@ -33,6 +33,7 @@ export default function RecordingInterface() {
 
   // --- Local UI State ---
   const [webcamEnabled, setWebcamEnabled] = useState(true);
+  const [micEnabled, setMicEnabled] = useState(true);
 
   // Review / Upload State
   const [reviewState, setReviewState] = useState<ReviewState>("review");
@@ -56,7 +57,7 @@ export default function RecordingInterface() {
   // --- Actions ---
 
   const handleStartRecording = async () => {
-    await startRecording(webcamEnabled);
+    await startRecording(webcamEnabled, micEnabled);
   };
 
   const handleStopRecording = () => {
@@ -133,6 +134,8 @@ export default function RecordingInterface() {
           onStartRecording={handleStartRecording}
           onStopRecording={handleStopRecording}
           onToggleWebcam={() => setWebcamEnabled(!webcamEnabled)}
+          micEnabled={micEnabled}
+          onToggleMic={() => setMicEnabled(!micEnabled)}
         />
       </main>
     );

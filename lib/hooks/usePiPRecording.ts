@@ -243,7 +243,7 @@ export const usePiPRecording = () => {
     }, [state.status]); // Depend on status to know when to kill things? Actually cleanup should be idempotent.
 
     // --- Start Recording ---
-    const startRecording = async (withWebcam: boolean = true) => {
+    const startRecording = async (withWebcam: boolean = true, withMic: boolean = true) => {
         // Enforce FSM Transition
         if (!fsmRef.current.transition("initializing")) return;
         updateState();
@@ -257,21 +257,21 @@ export const usePiPRecording = () => {
                 error: null
             }));
 
-            // STEP 1: Preflight webcam permission BEFORE screen capture
+            // STEP 1: Preflight permissions BEFORE screen capture
             // This prevents the poor UX where user has to switch tabs to grant permission
             // after getDisplayMedia() steals focus to the captured screen.
-            if (withWebcam) {
+            if (withWebcam || withMic) {
                 try {
                     const preflightStream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: 1280, height: 720 },
-                        audio: true,
+                        video: withWebcam ? { width: 1280, height: 720 } : false,
+                        audio: withMic,
                     });
                     // Immediately stop all tracks - we only needed permission grant
                     preflightStream.getTracks().forEach(track => track.stop());
-                    console.log("Webcam permission preflight successful");
+                    console.log("Permission preflight successful");
                 } catch (err) {
-                    console.warn("Webcam preflight failed:", err);
-                    // Continue without webcam if permission denied
+                    console.warn("Permission preflight failed:", err);
+                    // Continue without webcam/mic if permission denied
                 }
             }
 
@@ -282,30 +282,27 @@ export const usePiPRecording = () => {
                     height: { ideal: CANVAS_HEIGHT },
                     frameRate: { ideal: FRAME_RATE },
                 },
-                audio: true,
+                audio: true, // We still want system audio if available
             });
             screenStreamRef.current = displayStream;
 
             // Handle user clicking "Stop Sharing" in browser UI
             displayStream.getVideoTracks()[0].onended = () => {
-                // Determine if we should treat this as a valid stop or error based on duration?
-                // For now, treat as manual stop.
                 performStop();
             };
 
-            // STEP 3: Re-acquire webcam stream for actual recording (permission already granted)
+            // STEP 3: Re-acquire user streams for actual recording (permission already granted)
             let userStream: MediaStream | null = null;
-            if (withWebcam) {
+            if (withWebcam || withMic) {
                 try {
                     userStream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: 1280, height: 720 },
-                        audio: true,
+                        video: withWebcam ? { width: 1280, height: 720 } : false,
+                        audio: withMic,
                     });
-                    webcamStreamRef.current = userStream;
-                    microphoneStreamRef.current = userStream;
+                    if (withWebcam) webcamStreamRef.current = userStream;
+                    if (withMic) microphoneStreamRef.current = userStream;
                 } catch (err) {
-                    console.warn("Webcam acquisition failed:", err);
-                    // Don't fail the whole recording, just proceed without cam
+                    console.warn("User stream acquisition failed:", err);
                 }
             }
 

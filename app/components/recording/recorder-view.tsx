@@ -8,12 +8,12 @@ import { formatTime } from "./utils";
 
 interface RecorderViewProps {
   status:
-    | "idle"
-    | "recording"
-    | "initializing"
-    | "stopping"
-    | "completed"
-    | "error"; // broad to match
+  | "idle"
+  | "recording"
+  | "initializing"
+  | "stopping"
+  | "completed"
+  | "error"; // broad to match
   webcamEnabled: boolean;
   previewStream: MediaStream | null;
   recordingDuration: number;
@@ -28,6 +28,8 @@ interface RecorderViewProps {
   onStartRecording: () => void;
   onStopRecording: () => void;
   onToggleWebcam: () => void;
+  micEnabled: boolean;
+  onToggleMic: () => void;
 }
 
 export function RecorderView({
@@ -41,6 +43,8 @@ export function RecorderView({
   onStartRecording,
   onStopRecording,
   onToggleWebcam,
+  micEnabled,
+  onToggleMic,
 }: RecorderViewProps) {
   // --- Refs & State ---
   const containerRef = useRef<HTMLDivElement>(null);
@@ -245,10 +249,12 @@ export function RecorderView({
         onStopRecording={onStopRecording}
         webcamEnabled={webcamEnabled}
         onToggleWebcam={onToggleWebcam}
+        micEnabled={micEnabled}
+        onToggleMic={onToggleMic}
         recordingDuration={recordingDuration}
-        onReset={() => {}} // No-op for now as we don't have reset exposed in the hook yet
-        onPause={() => {}} // No-op
-        onDelete={() => {}} // No-op
+        onReset={() => { }} // No-op for now as we don't have reset exposed in the hook yet
+        onPause={() => { }} // No-op
+        onDelete={() => { }} // No-op
       />
     </div>
   );
