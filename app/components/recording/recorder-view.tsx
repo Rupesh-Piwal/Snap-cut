@@ -1,19 +1,18 @@
 import { useRef, useState, useEffect } from "react";
-import { Video, Timer, Mic, Monitor, Camera } from "lucide-react";
+import { Video, Timer, Monitor, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ControlBar } from "./control-bar";
 import { formatTime } from "./utils";
 import { Button } from "@/components/ui/button";
-import Clip from "./clip";
 
 interface RecorderViewProps {
   status:
-    | "idle"
-    | "recording"
-    | "initializing"
-    | "stopping"
-    | "completed"
-    | "error";
+  | "idle"
+  | "recording"
+  | "initializing"
+  | "stopping"
+  | "completed"
+  | "error";
   webcamEnabled: boolean;
   previewStream: MediaStream | null;
   recordingDuration: number;
@@ -124,17 +123,17 @@ export function RecorderView({
   return (
     <div className="flex flex-col text-white overflow-hidden min-h-screen bg-[#0E0E10]">
       {/* VIDEO AREA */}
-      <div className="flex-1 flex items-center justify-center relative m-2 rounded-lg bg-[#1A1B1D] border border-[#2E2E30]">
+      <div className="flex-1 flex items-center justify-center relative m-2">
         {/* Permission Gate or Main Video Area */}
         {!hasAnyPermission && status === "idle" ? (
           // =============================================
           // PERMISSION GATE SCREEN (Embedded)
           // =============================================
-          <div className="max-w-md w-full space-y-8 p-8 flex flex-col items-center animate-in fade-in duration-500">
+          <div className="max-w-md w-full space-y-8 p-8 flex flex-col items-center animate-in fade-in duration-500 bg-black/40 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl">
             {permissionError ? (
               // ERROR STATE (Design from image)
               <>
-                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-2 ring-1 ring-red-500/20">
+                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-2 ring-1 ring-red-500/20 backdrop-blur-sm">
                   <span className="text-red-500 font-bold text-2xl">✕</span>
                 </div>
 
@@ -160,7 +159,7 @@ export function RecorderView({
               // INITIAL PERMISSION STATE
               <>
                 <div className="text-center space-y-3">
-                  <div className="w-20 h-20 mx-auto bg-[#1c1c1c] rounded-full flex items-center justify-center mb-6 ring-1 ring-white/10">
+                  <div className="w-20 h-20 mx-auto bg-white/5 rounded-full flex items-center justify-center mb-6 ring-1 ring-white/10 backdrop-blur-md">
                     <Camera className="w-10 h-10 text-white/60" />
                   </div>
                   <h2 className="text-3xl font-bold bg-linear-to-b from-white to-white/60 bg-clip-text text-transparent">
@@ -175,7 +174,7 @@ export function RecorderView({
                   <Button
                     onClick={onRequestCameraMic}
                     size="lg"
-                    className="w-full h-14 text-base font-semibold bg-white hover:bg-gray-100 text-black shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)]"
+                    className="w-full h-14 text-base font-semibold bg-white/90 hover:bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] backdrop-blur-sm"
                   >
                     <Video className="w-5 h-5 mr-3" />
                     Enable camera & microphone
@@ -192,7 +191,7 @@ export function RecorderView({
         ) : (
           <div
             ref={containerRef}
-            className="relative w-full max-w-380 h-[calc(100vh-170px)] bg-[#1a1a1a] rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+            className="relative w-full max-w-420 h-[calc(100vh-100px)] bg-black/30 backdrop-blur-3xl rounded-3xl overflow-hidden border border-white/10 shadow-2xl ring-1 ring-white/5"
           >
             {/* Recording Preview (shows during recording) */}
             {isRecordingActive && (
@@ -215,8 +214,8 @@ export function RecorderView({
                 {permissions.screen && screenPreviewStream ? (
                   <div
                     className={cn(
-                      "relative bg-[#0a0a0a] flex items-center justify-center",
-                      permissions.camera && webcamEnabled ? "w-2/3" : "w-full",
+                      "relative bg-black/40 flex items-center justify-center border-8 border-transparent overflow-hidden h-[70vh] mx-auto rounded-xl shadow-inner",
+                      permissions.camera && webcamEnabled ? "w-2/3" : "",
                     )}
                   >
                     <video
@@ -224,10 +223,10 @@ export function RecorderView({
                       muted
                       playsInline
                       autoPlay
-                      className="w-full h-full object-contain"
+                      className="w-full h-full overflow-hidden"
                     />
                     {/* Screen label */}
-                    <div className="absolute bottom-4 left-4 bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 border border-blue-500/30">
+                    <div className="absolute bottom-4 left-4 bg-blue-500/20 text-gray-400 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 border border-gray-500/30">
                       <Monitor className="w-3 h-3" />
                       Screen
                     </div>
@@ -236,12 +235,12 @@ export function RecorderView({
                   /* Empty state when no screen share */
                   <div
                     className={cn(
-                      "relative bg-[#1a1a1a] flex flex-col items-center justify-center",
+                      "relative flex flex-col items-center justify-center bg-white/5 backdrop-blur-md",
                       permissions.camera && webcamEnabled ? "w-2/3" : "w-full",
                     )}
                   >
                     <div className="text-center space-y-4">
-                      <div className="w-16 h-16 mx-auto bg-white/5 rounded-full flex items-center justify-center ring-1 ring-white/10">
+                      <div className="w-16 h-16 mx-auto bg-white/5 rounded-full flex items-center justify-center ring-1 ring-white/10 backdrop-blur-sm">
                         <Monitor className="w-8 h-8 text-white/30" />
                       </div>
                       <div className="space-y-2">
@@ -258,7 +257,7 @@ export function RecorderView({
 
                 {/* Webcam Preview (Right) - Always visible if camera enabled */}
                 {permissions.camera && webcamEnabled && webcamPreviewStream && (
-                  <div className="w-1/3 relative bg-[#0a0a0a] flex items-center justify-center border-l border-white/10">
+                  <div className="w-1/3 relative bg-black/20 flex items-center justify-center border-l border-white/10 backdrop-blur-sm">
                     <video
                       ref={webcamVideoRef}
                       muted
@@ -320,14 +319,13 @@ export function RecorderView({
         micEnabled={micEnabled}
         onToggleMic={onToggleMic}
         recordingDuration={recordingDuration}
-        onReset={() => {}}
-        onPause={() => {}}
-        onDelete={() => {}}
+        onReset={() => { }}
+        onPause={() => { }}
+        onDelete={() => { }}
         screenShareEnabled={permissions.screen}
         onToggleScreenShare={onRequestScreen}
         canRecord={canRecord}
       />
-      <Clip />
     </div>
   );
 }

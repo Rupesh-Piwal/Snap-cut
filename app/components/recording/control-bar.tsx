@@ -15,13 +15,13 @@ import { cn } from "@/lib/utils";
 
 interface ControlBarProps {
   status:
-    | "idle"
-    | "dest"
-    | "initializing"
-    | "recording"
-    | "stopping"
-    | "completed"
-    | "error";
+  | "idle"
+  | "dest"
+  | "initializing"
+  | "recording"
+  | "stopping"
+  | "completed"
+  | "error";
   onStartRecording: () => void;
   onStopRecording: () => void;
   webcamEnabled: boolean;
@@ -65,7 +65,7 @@ export function ControlBar({
 
   if (status === "idle") {
     return (
-      <div className="flex items-center justify-center gap-8 m-2 rounded-lg bg-[#1A1B1D] border border-[#2E2E30] p-1">
+      <div className="flex items-center justify-center gap-8 m-2 rounded-lg bg-[#1A1B1D] border border-[#2E2E30] px-6 py-2 md:max-w-md mx-auto">
         {/* Record/Start Button - DISABLED when no media source */}
         <div className="flex flex-col items-center gap-2">
           <button
@@ -80,9 +80,9 @@ export function ControlBar({
           >
             <span className="text-lg font-semibold tracking-tight">Record</span>
           </button>
-          <span className="text-[12px] font-medium text-gray-400">
+          {/* <span className="text-[12px] font-medium text-gray-400">
             {canRecord ? "Start" : "Enable source"}
-          </span>
+          </span> */}
         </div>
 
         {/* Screen Share Toggle */}
@@ -102,7 +102,7 @@ export function ControlBar({
               <MonitorOff className="w-5 h-5 opacity-40" />
             )}
           </button>
-          <span className="text-[12px] font-medium text-slate-400">Screen</span>
+          {/* <span className="text-[12px] font-medium text-slate-400">Screen</span> */}
         </div>
 
         {/* Mic Toggle */}
@@ -122,7 +122,7 @@ export function ControlBar({
               <MicOff className="w-5 h-5 opacity-40" />
             )}
           </button>
-          <span className="text-[12px] font-medium text-slate-400">Mic</span>
+          {/* <span className="text-[12px] font-medium text-slate-400">Mic</span> */}
         </div>
 
         {/* Cam Toggle */}
@@ -142,25 +142,25 @@ export function ControlBar({
               <VideoOff className="w-5 h-5 opacity-40" />
             )}
           </button>
-          <span className="text-[12px] font-medium text-slate-400">Cam</span>
+          {/* <span className="text-[12px] font-medium text-slate-400">Cam</span> */}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-16 flex items-center justify-center pointer-events-none pb-6">
+    <div className="h-24 flex items-center justify-center pointer-events-none pb-8">
       {/* Floating Bar Container */}
-      <div className="pointer-events-auto bg-[#1a1a1a]/95 backdrop-blur-xl rounded-full shadow-[0_8px_40px_rgb(0,0,0,0.5)] border border-white/10 p-1 flex items-center gap-4 animate-in slide-in-from-bottom-10 fade-in duration-500">
+      <div className="pointer-events-auto bg-black/60 backdrop-blur-2xl rounded-full shadow-[0_8px_32px_rgb(0,0,0,0.5)] border border-white/10 p-1.5 flex items-center gap-4 animate-in slide-in-from-bottom-10 fade-in duration-500 ring-1 ring-white/5">
         {/* Main Controls Group */}
-        <div className="flex items-center bg-[#0a0a0a] rounded-full px-2 py-1 gap-1.5">
+        <div className="flex items-center bg-black/40 rounded-full px-2 py-1 gap-1.5 border border-white/5">
           {/* Stop Button */}
           <button
             onClick={onStopRecording}
-            className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-[#1a1a1a] transition-all text-white/60 hover:text-red-400 group"
+            className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/5 transition-all text-white/60 hover:text-red-400 group"
             title="Stop Recording"
           >
-            <div className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-full group-hover:bg-red-500/20 transition-all duration-200">
+            <div className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-full group-hover:bg-red-500/20 transition-all duration-200 border border-white/5">
               <div className="w-3 h-3 bg-white rounded-[3px] shadow-sm transform group-hover:scale-110 transition-transform" />
             </div>
           </button>
