@@ -61,7 +61,7 @@ export const PostProcessor = forwardRef<PostProcessorRef, PostProcessorProps>(
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const screenVideoRef = useRef<HTMLVideoElement>(null);
     const cameraVideoRef = useRef<HTMLVideoElement>(null);
-    const animationFrameRef = useRef<number | null>(null);
+    const playbackIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // Create object URLs on mount, revoke on unmount
     const [screenUrl, setScreenUrl] = useState<string | null>(null);
@@ -161,6 +161,7 @@ export const PostProcessor = forwardRef<PostProcessorRef, PostProcessorProps>(
     }, [layoutId, background, backgroundImage]);
 
     // Loop
+    // Loop
     useEffect(() => {
       const loop = () => {
         const v = screenVideoRef.current || cameraVideoRef.current;
@@ -174,27 +175,28 @@ export const PostProcessor = forwardRef<PostProcessorRef, PostProcessorProps>(
         }
 
         draw();
-        animationFrameRef.current = requestAnimationFrame(loop);
       };
 
       if (isPlaying) {
         screenVideoRef.current?.play().catch(() => { });
         cameraVideoRef.current?.play().catch(() => { });
-        loop();
+
+        // Use setInterval instead of rAF
+        playbackIntervalRef.current = setInterval(loop, 1000 / 60); // 60 FPS target
       } else {
         screenVideoRef.current?.pause();
         cameraVideoRef.current?.pause();
         draw(); // Draw static frame
-        // cancelAnimationFrame(animationFrameRef.current!);
-        if (animationFrameRef.current !== null) {
-          cancelAnimationFrame(animationFrameRef.current);
-          //  Memory Leak in Animation Frame Cleanup.
+
+        if (playbackIntervalRef.current) {
+          clearInterval(playbackIntervalRef.current);
+          playbackIntervalRef.current = null;
         }
       }
 
       return () => {
-        if (animationFrameRef.current !== null) {
-          cancelAnimationFrame(animationFrameRef.current);
+        if (playbackIntervalRef.current) {
+          clearInterval(playbackIntervalRef.current);
         }
       };
     }, [isPlaying, draw, layoutId]); // Re-run loop setup if play state changes
@@ -309,6 +311,8 @@ export const PostProcessor = forwardRef<PostProcessorRef, PostProcessorProps>(
             vCamera ? vCamera.play() : Promise.resolve(),
           ]);
 
+          let exportInterval: NodeJS.Timeout | null = null;
+
           const exportLoop = () => {
             // Track export progress
             const primary = vScreen || vCamera;
@@ -319,10 +323,13 @@ export const PostProcessor = forwardRef<PostProcessorRef, PostProcessorProps>(
 
             draw();
             if (recorder.state === "recording") {
-              requestAnimationFrame(exportLoop);
+              // Continue loop
+            } else {
+              if (exportInterval) clearInterval(exportInterval);
             }
           };
-          exportLoop();
+
+          exportInterval = setInterval(exportLoop, 1000 / 60);
 
           // 5. Wait for end
           // Listen for 'ended' on primary video
@@ -330,10 +337,12 @@ export const PostProcessor = forwardRef<PostProcessorRef, PostProcessorProps>(
           if (primary) {
             primary.onended = () => {
               recorder.stop();
+              if (exportInterval) clearInterval(exportInterval);
               primary.onended = null; // cleanup
             };
           } else {
             recorder.stop();
+            if (exportInterval) clearInterval(exportInterval);
           }
         } catch (err) {
           // Cleanup AudioContext on error to prevent resource leak

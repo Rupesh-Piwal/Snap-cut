@@ -9,7 +9,7 @@ import {
 import { BunnyRecordingState, RecordingState } from "../types";
 
 import { RecordingStateMachine } from "../recording-state-machine";
-import { getLayout } from "../layouts/layout-engine";
+// import { getLayout } from "../layouts/layout-engine"; // Layout logic moved to worker
 
 // Configuration Constants
 const CANVAS_WIDTH = 1920;
@@ -102,9 +102,14 @@ export const usePiPRecording = () => {
     const micSourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
-    const animationFrameRef = useRef<number | null>(null);
-    const backgroundIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    // const ctxRef = useRef<CanvasRenderingContext2D | null>(null); // Moved to worker
+    // const animationFrameRef = useRef<number | null>(null); // Removed rAF
+    // const backgroundIntervalRef = useRef<NodeJS.Timeout | null>(null); // Removed background interval
+
+    // Worker Refs
+    const workerRef = useRef<Worker | null>(null);
+    const frameLoopIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
     const startTimeRef = useRef<number | null>(null);
     const primaryChunksRef = useRef<Blob[]>([]);
     const secondaryChunksRef = useRef<Blob[]>([]);
@@ -399,38 +404,68 @@ export const usePiPRecording = () => {
         }
     }, []);
 
-    // Drawing Loop
-    const drawFrame = useCallback(() => {
-        const ctx = ctxRef.current;
-        const canvas = canvasRef.current;
-        const screenVideo = screenVideoRef.current;
-        const webcamVideo = webcamVideoRef.current;
+    // Drawing Loop (Legacy rAF removed)
+    // New Loop: Extract Bitmaps and send to Worker
+    const startWorkerLoop = useCallback(() => {
+        if (frameLoopIntervalRef.current) clearInterval(frameLoopIntervalRef.current);
 
-        if (!ctx || !canvas) return;
+        const TARGET_FPS = 30;
+        const INTERVAL = 1000 / TARGET_FPS;
 
-        // Default to Side-by-Side (Screen Left)
-        const layoutId = "screen-camera-right";
-        const layout = getLayout(layoutId);
+        frameLoopIntervalRef.current = setInterval(async () => {
+            if (!workerRef.current) return;
 
-        // Render using layout engine
-        layout.render(
-            ctx,
-            screenVideo,
-            webcamVideo,
-            CANVAS_WIDTH,
-            CANVAS_HEIGHT,
-            undefined
-        );
+            const screenVideo = screenVideoRef.current;
+            const webcamVideo = webcamVideoRef.current;
 
-        animationFrameRef.current = requestAnimationFrame(drawFrame);
-    }, [cameraEnabled]);
+            let screenBitmap: ImageBitmap | undefined;
+            let webcamBitmap: ImageBitmap | undefined;
+
+            try {
+                if (screenVideo && screenVideo.readyState >= 2) {
+                    screenBitmap = await createImageBitmap(screenVideo);
+                }
+                if (webcamVideo && webcamVideo.readyState >= 2) {
+                    webcamBitmap = await createImageBitmap(webcamVideo);
+                }
+
+                if (screenBitmap || webcamBitmap) {
+                    workerRef.current.postMessage({
+                        type: "FRAME_UPDATE",
+                        payload: {
+                            screenBitmap,
+                            webcamBitmap
+                        }
+                    }, [
+                        ...(screenBitmap ? [screenBitmap] : []),
+                        ...(webcamBitmap ? [webcamBitmap] : [])
+                    ]);
+                }
+            } catch (err) {
+                console.error("Frame capture error:", err);
+                // Clean up if transfer failed
+                if (screenBitmap) screenBitmap.close();
+                if (webcamBitmap) webcamBitmap.close();
+            }
+
+        }, INTERVAL);
+    }, []);
 
     // Cleanup resources used ONLY for recording
     const cleanupRecordingResources = useCallback(() => {
         console.log("[Cleanup] Cleaning recording resources...");
 
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-        if (backgroundIntervalRef.current) clearInterval(backgroundIntervalRef.current);
+        if (frameLoopIntervalRef.current) {
+            clearInterval(frameLoopIntervalRef.current);
+            frameLoopIntervalRef.current = null;
+        }
+
+        if (workerRef.current) {
+            workerRef.current.postMessage({ type: "STOP" });
+            workerRef.current.terminate();
+            workerRef.current = null;
+        }
+
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
 
         if (audioContextRef.current) {
@@ -580,15 +615,32 @@ export const usePiPRecording = () => {
         }
 
         try {
-            // Setup Canvas (Keep for Preview)
+            // Setup Canvas & Worker
             const canvas = document.createElement("canvas");
             canvas.width = CANVAS_WIDTH;
             canvas.height = CANVAS_HEIGHT;
             canvasRef.current = canvas;
-            ctxRef.current = canvas.getContext("2d", { alpha: false });
 
-            drawFrame();
-            backgroundIntervalRef.current = setInterval(() => { if (document.hidden) drawFrame(); }, 100);
+            // Transfer to Worker
+            const offscreen = canvas.transferControlToOffscreen();
+
+            const worker = new Worker(new URL("../../workers/canvasRenderer.worker.ts", import.meta.url));
+            workerRef.current = worker;
+
+            worker.postMessage({
+                type: "INIT",
+                payload: { canvas: offscreen }
+            }, [offscreen]);
+
+            worker.postMessage({ type: "START" });
+
+            // Start pushing frames
+            startWorkerLoop();
+
+            // ctxRef.current = canvas.getContext("2d", { alpha: false }); // REMOVED (Cannot use context on main thread)
+
+            // drawFrame(); // REMOVED
+            // backgroundIntervalRef.current = setInterval(() => { if (document.hidden) drawFrame(); }, 100); // REMOVED
 
             // Setup Audio Mixer
             const ctx = new AudioContext();
