@@ -42,3 +42,19 @@ export type RecordingSession = {
   };
   video: Blob;
 };
+
+export interface PermissionState {
+  camera: boolean;
+  mic: boolean;
+  screen: boolean;
+}
+
+export type PermissionErrorType =
+  | 'PERMISSION_BLOCKED'
+  | 'DEVICE_BUSY'
+  | 'NO_DEVICE'
+  | 'HTTPS_REQUIRED'
+  | 'USER_CANCELLED'
+  | 'UNKNOWN'
+  | null;
+
