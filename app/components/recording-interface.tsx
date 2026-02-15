@@ -46,6 +46,14 @@ export default function RecordingInterface() {
     cancelCountdown,
     background,
     setBackground,
+    webcamShape,
+    setWebcamShape,
+    webcamSize,
+    setWebcamSize,
+    webcamPosition,
+    setWebcamPosition,
+    webcamVideoRef,
+    screenVideoRef,
   } = usePiPRecording();
 
   // Review / Upload State
@@ -149,9 +157,17 @@ export default function RecordingInterface() {
           permissionError={permissionError}
           permissionErrorType={permissionErrorType}
           countdownValue={countdownValue}
-          onCancelCountdown={cancelCountdown}
+          // onCancelCountdown={cancelCountdown}
           background={background}
           onSetBackground={setBackground}
+          webcamShape={webcamShape}
+          setWebcamShape={setWebcamShape}
+          webcamSize={webcamSize}
+          setWebcamSize={setWebcamSize}
+          webcamPosition={webcamPosition}
+          setWebcamPosition={setWebcamPosition}
+          webcamVideoRef={webcamVideoRef}
+          screenVideoRef={screenVideoRef}
         />
       </main>
     );

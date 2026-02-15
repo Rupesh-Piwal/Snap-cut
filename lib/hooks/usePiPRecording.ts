@@ -10,6 +10,9 @@ import { drawBackground } from "../layouts/layout-engine";
 const CANVAS_WIDTH = 1920;
 const CANVAS_HEIGHT = 1080;
 
+export type WebcamShape = "circle" | "square" | "rounded_square";
+export type WebcamSize = "s" | "m" | "l";
+
 export const usePiPRecording = () => {
     // --- FSM & State ---
     const fsmRef = useRef<RecordingStateMachine>(new RecordingStateMachine());
@@ -23,7 +26,6 @@ export const usePiPRecording = () => {
     });
 
     const [countdownValue, setCountdownValue] = useState<number | null>(null);
-    const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // --- Background State ---
     const [background, setBackground] = useState<BackgroundOption>(NO_BACKGROUND);
@@ -43,6 +45,14 @@ export const usePiPRecording = () => {
         }
     }, [background]);
 
+    // --- Webcam Configuration State ---
+    const [webcamShape, setWebcamShape] = useState<WebcamShape>("circle");
+    const [webcamSize, setWebcamSize] = useState<WebcamSize>("m");
+    const [webcamPosition, setWebcamPosition] = useState<{ x: number, y: number }>({
+        x: CANVAS_WIDTH - 450, // Default bottom right approx
+        y: CANVAS_HEIGHT - 450
+    });
+
     // --- External Hooks ---
     const {
         permissions,
@@ -56,10 +66,7 @@ export const usePiPRecording = () => {
         screenVideoRef,
         microphoneStreamRef,
         startCamera,
-        stopCamera,
         toggleCamera,
-        startMic,
-        stopMic,
         toggleMic,
         startScreen,
         stopScreen,
@@ -150,60 +157,161 @@ export const usePiPRecording = () => {
         // 1. Draw Background
         drawBackground(ctx, CANVAS_WIDTH, CANVAS_HEIGHT, backgroundImageElementRef.current || background);
 
-        // 2. Draw Screen
+        // 2. Draw Screen (Contain Mode)
         if (screenVideoRef.current && screenVideoRef.current.readyState >= 2) {
-            // Draw full screen
-            ctx.drawImage(screenVideoRef.current, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            const video = screenVideoRef.current;
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            const videoRatio = vw / vh;
+            const canvasRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
+
+            let drawW, drawH, drawX, drawY;
+
+            if (videoRatio > canvasRatio) {
+                // Video is wider match width
+                drawW = CANVAS_WIDTH;
+                drawH = CANVAS_WIDTH / videoRatio;
+                drawX = 0;
+                drawY = (CANVAS_HEIGHT - drawH) / 2;
+            } else {
+                // Video is taller match height
+                drawH = CANVAS_HEIGHT;
+                drawW = CANVAS_HEIGHT * videoRatio;
+                drawX = (CANVAS_WIDTH - drawW) / 2;
+                drawY = 0;
+            }
+
+            // Draw screen with shadow to separate from background
+            ctx.save();
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.shadowBlur = 20;
+            ctx.drawImage(video, 0, 0, vw, vh, drawX, drawY, drawW, drawH);
+            ctx.restore();
         } else {
-            // Placeholder if screen is missing but we are recording?
-            // Actually usually we just draw black.
-            ctx.fillStyle = "#111"; // slightly lighter black
-            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            ctx.fillStyle = "#333";
-            ctx.font = "40px sans-serif";
-            ctx.fillText("Waiting for screen...", CANVAS_WIDTH / 2 - 150, CANVAS_HEIGHT / 2);
+            // Placeholder text if needed, or just let background show
         }
 
-        // 3. Draw Camera (Circle or PiP)
+        // 3. Draw Camera (Draggable & Configurable)
         if (webcamVideoRef.current && webcamVideoRef.current.readyState >= 2 && cameraEnabled) {
-            // Default layout: Bottom Right Circle
-            const size = 400; // Fixed size for now
-            const padding = 50;
-            const x = CANVAS_WIDTH - size - padding;
-            const y = CANVAS_HEIGHT - size - padding;
+            const sizeMap = { s: 240, m: 350, l: 480 };
+            const size = sizeMap[webcamSize];
+            const { x, y } = webcamPosition;
 
             ctx.save();
             ctx.beginPath();
-            ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+
+            if (webcamShape === "circle") {
+                ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+            } else if (webcamShape === "square") {
+                ctx.rect(x, y, size, size);
+            } else if (webcamShape === "rounded_square") {
+                ctx.roundRect(x, y, size, size, 40);
+            }
+
             ctx.clip();
-            // Draw video centered in circle, covering it
-            // simple draw for now
-            ctx.drawImage(webcamVideoRef.current, x, y, size, size);
+
+            // Draw video (Cover)
+            const vw = webcamVideoRef.current.videoWidth;
+            const vh = webcamVideoRef.current.videoHeight;
+            const va = vw / vh;
+            // We want to cover the square 'size x size'
+            // Since 'size' is square, aspect ratio target is 1
+            let sx, sy, sw, sh;
+            if (va > 1) { // Video Wider
+                sw = vh; sh = vh;
+                sx = (vw - sw) / 2; sy = 0;
+            } else { // Video Taller
+                sw = vw; sh = vw;
+                sx = 0; sy = (vh - sh) / 2;
+            }
+
+            ctx.drawImage(webcamVideoRef.current, sx, sy, sw, sh, x, y, size, size);
             ctx.restore();
 
             // Border
             ctx.beginPath();
-            ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-            ctx.lineWidth = 10;
-            ctx.strokeStyle = "white";
+            if (webcamShape === "circle") {
+                ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+            } else if (webcamShape === "square") {
+                ctx.rect(x, y, size, size);
+            } else if (webcamShape === "rounded_square") {
+                ctx.roundRect(x, y, size, size, 40);
+            }
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "white"; // "rgba(255,255,255,0.2)"
             ctx.stroke();
         }
 
-    }, [cameraEnabled, screenVideoRef, webcamVideoRef]);
+    }, [cameraEnabled, screenVideoRef, webcamVideoRef, background, webcamPosition, webcamSize, webcamShape]);
 
 
     // --- Recording Control ---
 
-    const startWorker = () => {
-        if (workerRef.current) return;
-        workerRef.current = new Worker(new URL("../../workers/heartbeat.worker.js", import.meta.url));
+    // --- Continuous Rendering for Preview ---
+    useEffect(() => {
+        // 1. Init Canvas
+        if (!canvasRef.current) {
+            const canvas = document.createElement("canvas");
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+            canvasRef.current = canvas;
+            ctxRef.current = canvas.getContext("2d", { alpha: false });
+        }
 
-        workerRef.current.onmessage = (e) => {
-            if (e.data === "tick") {
-                renderFrame();
+        // 2. Start Worker for Tick
+        if (!workerRef.current) {
+            workerRef.current = new Worker(new URL("../../workers/heartbeat.worker.js", import.meta.url));
+            workerRef.current.onmessage = (e) => {
+                if (e.data === "tick") {
+                    renderFrame();
+                }
+            };
+            workerRef.current.postMessage("start");
+        }
+
+        // 3. Set Preview Stream (Canvas only)
+        if (!recordingStream && canvasRef.current) {
+            // We set this as "previewStream" effectively
+            const stream = canvasRef.current.captureStream(30);
+            setRecordingStream(stream);
+        }
+
+        return () => {
+            // Cleanup on unmount?
+            // Should we stop worker? Yes.
+            if (workerRef.current) {
+                workerRef.current.terminate();
+                workerRef.current = null;
             }
         };
-        workerRef.current.postMessage("start");
+    }, []); // Run once on mount (renderFrame is stable? No, it depends on state. Worker calls renderFrameRef?)
+
+    // Issue: renderFrame is a dependency. renderFrame depends on state.
+    // If renderFrame changes, we don't need to restart worker, just ensure worker calls the *current* renderFrame.
+    // But `worker.onmessage` is a closure. It captures `renderFrame`. 
+    // We should use a ref for renderFrame or the Tick logic?
+
+    const renderFrameRef = useRef(renderFrame);
+    useEffect(() => {
+        renderFrameRef.current = renderFrame;
+    }, [renderFrame]);
+
+    // Update worker listener to use ref
+    useEffect(() => {
+        if (!workerRef.current) return;
+        workerRef.current.onmessage = (e) => {
+            if (e.data === "tick") {
+                renderFrameRef.current();
+            }
+        };
+    }, [workerRef.current]); // Only if worker instance changes (which is rare/once)
+
+
+    const startWorker = () => {
+        // Deprecated or Reused?
+        // We already start worker on mount.
+        // Just ensure it is running?
+        if (workerRef.current) workerRef.current.postMessage("start");
     };
 
 
@@ -382,5 +490,14 @@ export const usePiPRecording = () => {
         cancelCountdown,
         background,
         setBackground,
+        webcamShape,
+        setWebcamShape,
+        webcamSize,
+        setWebcamSize,
+        webcamPosition,
+        setWebcamPosition,
+        // Refs
+        webcamVideoRef,
+        screenVideoRef
     };
 };

@@ -5,6 +5,7 @@ import { ControlBar } from "./control-bar";
 import { formatTime } from "./utils";
 import { Button } from "@/components/ui/button";
 import { BackgroundOption } from "@/lib/backgrounds";
+import { WebcamShape, WebcamSize } from "@/lib/hooks/usePiPRecording";
 
 interface RecorderViewProps {
   status:
@@ -39,6 +40,14 @@ interface RecorderViewProps {
   onCancelCountdown: () => void;
   background: BackgroundOption;
   onSetBackground: (bg: BackgroundOption) => void;
+  webcamShape: WebcamShape;
+  setWebcamShape: (shape: WebcamShape) => void;
+  webcamSize: WebcamSize;
+  setWebcamSize: (size: WebcamSize) => void;
+  webcamPosition: { x: number; y: number };
+  setWebcamPosition: (pos: { x: number; y: number }) => void;
+  webcamVideoRef: React.RefObject<HTMLVideoElement | null>;
+  screenVideoRef: React.RefObject<HTMLVideoElement | null>;
 }
 
 export function RecorderView({
@@ -61,15 +70,21 @@ export function RecorderView({
   canRecord,
   permissionError,
   countdownValue,
-  onCancelCountdown,
+  // onCancelCountdown,
   background,
   onSetBackground,
+  webcamShape,
+  setWebcamShape,
+  webcamSize,
+  setWebcamSize,
+  webcamPosition,
+  setWebcamPosition,
+  webcamVideoRef,
+  screenVideoRef,
 }: RecorderViewProps) {
   // --- Refs & State ---
   const containerRef = useRef<HTMLDivElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement | null>(null);
-  const webcamVideoRef = useRef<HTMLVideoElement | null>(null);
-  const screenVideoRef = useRef<HTMLVideoElement | null>(null);
 
   // No dragging state needed anymore
   const [isInitialized, setIsInitialized] = useState(false);
@@ -82,35 +97,40 @@ export function RecorderView({
   }, [canvasDimensions, isInitialized]);
 
   // --- Video Sources ---
-  // Main preview (recording stream)
+  // Main preview (Unified Canvas Stream)
   useEffect(() => {
     if (!previewVideoRef.current) return;
-    if (
-      previewStream &&
-      (status === "recording" ||
-        status === "initializing" ||
-        status === "stopping")
-    ) {
+    if (previewStream) {
       previewVideoRef.current.srcObject = previewStream;
-    } else {
-      previewVideoRef.current.srcObject = null;
     }
-  }, [previewStream, status]);
+  }, [previewStream]);
 
-  // Webcam preview (always visible after permission)
+  // Source streams are attached to hidden video elements manually here
+  // because useStreams effect runs BEFORE refs are populated by React.
+  // We must ensure the DOM elements get the stream.
+
+  // Webcam source
   useEffect(() => {
     if (!webcamVideoRef.current) return;
     if (webcamPreviewStream && webcamEnabled) {
       webcamVideoRef.current.srcObject = webcamPreviewStream;
+      webcamVideoRef.current.play().catch(console.error);
     } else {
       webcamVideoRef.current.srcObject = null;
     }
   }, [webcamPreviewStream, webcamEnabled]);
 
-  // Screen preview (visible when screen sharing)
+  // Screen source
   useEffect(() => {
-    if (screenVideoRef.current && screenPreviewStream) {
-      screenVideoRef.current.srcObject = screenPreviewStream;
+    if (!screenVideoRef.current) return;
+    if (screenPreviewStream) {
+      screenVideoRef.current.srcObject = screenPreviewStream; // Fixed: was screenVideoRef.current.srcObject = screenPreviewStream; 
+      // Wait, original code had `screenVideoRef.current.srcObject = screenPreviewStream;` 
+      // AND `previewVideoRef.current.srcObject = screenPreviewStream;` in my earlier read? 
+      // No, line 126 says `screenVideoRef.current.srcObject`.
+      screenVideoRef.current.play().catch(console.error);
+    } else {
+      screenVideoRef.current.srcObject = null;
     }
   }, [screenPreviewStream, permissions.screen]);
 
@@ -119,29 +139,92 @@ export function RecorderView({
 
   // Permission gate check
   const hasAnyPermission = permissions.camera || permissions.mic;
-  const isRecordingActive =
-    status === "recording" ||
-    status === "initializing" ||
-    status === "stopping";
 
-  // =============================================
-  // PERMISSION GATE SCREEN
-  // =============================================
-  // =============================================
-  // MAIN RECORDING VIEW
-  // =============================================
+  // --- Dragging Logic ---
+  const isDraggingRef = useRef(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+
+  const getWebcamRect = () => {
+    const sizeMap = { s: 240, m: 350, l: 480 };
+    const size = sizeMap[webcamSize];
+    return { x: webcamPosition.x, y: webcamPosition.y, w: size, h: size };
+  };
+
+  const mapEventToCanvas = (e: React.PointerEvent) => {
+    if (!previewVideoRef.current) return null;
+    const rect = previewVideoRef.current.getBoundingClientRect();
+    const scaleX = 1920 / rect.width;
+    const scaleY = 1080 / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (!webcamEnabled) return;
+    const pos = mapEventToCanvas(e);
+    if (!pos) return;
+
+    const webcamRect = getWebcamRect();
+    // Check hit test (simple rect for now, even if circle)
+    if (
+      pos.x >= webcamRect.x &&
+      pos.x <= webcamRect.x + webcamRect.w &&
+      pos.y >= webcamRect.y &&
+      pos.y <= webcamRect.y + webcamRect.h
+    ) {
+      isDraggingRef.current = true;
+      dragOffsetRef.current = {
+        x: pos.x - webcamRect.x,
+        y: pos.y - webcamRect.y
+      };
+      // Capture pointer
+      (e.target as Element).setPointerCapture(e.pointerId);
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    const pos = mapEventToCanvas(e);
+    if (!pos) return;
+
+    // Calculate new position
+    let newX = pos.x - dragOffsetRef.current.x;
+    let newY = pos.y - dragOffsetRef.current.y;
+
+    // Clamp to canvas (1920x1080)
+    const sizeMap = { s: 240, m: 350, l: 480 };
+    const size = sizeMap[webcamSize];
+
+    // Allow sticking to edges? 
+    // Basic clamping
+    newX = Math.max(0, Math.min(newX, 1920 - size));
+    newY = Math.max(0, Math.min(newY, 1080 - size));
+
+    setWebcamPosition({ x: newX, y: newY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    isDraggingRef.current = false;
+    (e.target as Element).releasePointerCapture(e.pointerId);
+  };
+
   return (
     <div className="flex flex-col text-white overflow-hidden min-h-screen bg-[#0E0E10]">
+      {/* Hidden Source Videos for Canvas Drawing - Visually hidden instead of display:none to avoid engine throttling */}
+      <div className="absolute opacity-0 pointer-events-none -z-50" aria-hidden="true">
+        <video ref={screenVideoRef} autoPlay playsInline muted />
+        <video ref={webcamVideoRef} autoPlay playsInline muted />
+      </div>
+
       {/* VIDEO AREA */}
       <div className="flex-1 flex items-center justify-center relative m-2">
         {/* Permission Gate or Main Video Area */}
         {!hasAnyPermission && status === "idle" ? (
-          // =============================================
-          // PERMISSION GATE SCREEN (Embedded)
-          // =============================================
           <div className="max-w-md w-full space-y-8 p-8 flex flex-col items-center animate-in fade-in duration-500 bg-black/40 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl">
             {permissionError ? (
-              // ERROR STATE (Design from image)
+              // ERROR STATE
               <>
                 <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-2 ring-1 ring-red-500/20 backdrop-blur-sm">
                   <span className="text-red-500 font-bold text-2xl">✕</span>
@@ -203,87 +286,30 @@ export function RecorderView({
             ref={containerRef}
             className="relative w-full max-w-420 h-[calc(100vh-220px)] bg-black/30 backdrop-blur-3xl rounded-3xl overflow-hidden border border-white/10 shadow-2xl ring-1 ring-white/5"
           >
-            {/* Recording Preview (shows during recording) */}
-            {isRecordingActive && (
-              <video
-                ref={previewVideoRef}
-                muted
-                playsInline
-                autoPlay
-                className={cn(
-                  "absolute inset-0 w-full h-full object-contain transition-opacity duration-500",
-                  previewStream ? "opacity-100" : "opacity-0",
-                )}
-              />
-            )}
+            {/* Unified Canvas Preview (Always Visible if stream exists) */}
+            <video
+              ref={previewVideoRef}
+              muted
+              playsInline
+              autoPlay
+              className={cn(
+                "absolute inset-0 w-full h-full object-contain transition-opacity duration-500",
+                previewStream ? "opacity-100" : "opacity-0",
+                canRecord ? "cursor-default" : ""
+              )}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+              style={{ touchAction: "none" }} // Prevent scrolling on touch
+            />
 
-            {/* Split Layout: Screen + Webcam (when idle and both are available) */}
-            {!isRecordingActive && (
-              <div className="absolute inset-0 flex">
-                {/* Screen Preview (Left) */}
-                {permissions.screen && screenPreviewStream ? (
-                  <div
-                    className={cn(
-                      "relative bg-black/40 flex items-center justify-center border-8 border-transparent overflow-hidden h-[70vh] mx-auto rounded-xl shadow-inner",
-                      permissions.camera && webcamEnabled ? "w-2/3" : "",
-                    )}
-                  >
-                    <video
-                      ref={screenVideoRef}
-                      muted
-                      playsInline
-                      autoPlay
-                      className="w-full h-full overflow-hidden"
-                    />
-                    {/* Screen label */}
-                    <div className="absolute bottom-4 left-4 bg-blue-500/20 text-gray-400 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 border border-gray-500/30">
-                      <Monitor className="w-3 h-3" />
-                      Screen
-                    </div>
-                  </div>
-                ) : (
-                  /* Empty state when no screen share */
-                  <div
-                    className={cn(
-                      "relative flex flex-col items-center justify-center bg-white/5 backdrop-blur-md",
-                      permissions.camera && webcamEnabled ? "w-2/3" : "w-full",
-                    )}
-                  >
-                    <div className="text-center space-y-4">
-                      <div className="w-16 h-16 mx-auto bg-white/5 rounded-full flex items-center justify-center ring-1 ring-white/10 backdrop-blur-sm">
-                        <Monitor className="w-8 h-8 text-white/30" />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-white/40 text-sm">
-                          No screen selected
-                        </p>
-                        <p className="text-white/25 text-xs">
-                          Click "Screen" below to share
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Webcam Preview (Right) - Always visible if camera enabled */}
-                {permissions.camera && webcamEnabled && webcamPreviewStream && (
-                  <div className="w-125 h-121.5 relative bg-black/20 flex items-center justify-center border-l border-white/10 backdrop-blur-sm">
-                    <video
-                      ref={webcamVideoRef}
-                      muted
-                      playsInline
-                      autoPlay
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Webcam label */}
-                    <div className="absolute bottom-4 left-4 bg-purple-500/20 text-purple-400 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 border border-purple-500/30">
-                      <Video className="w-3 h-3" />
-                      Camera
-                    </div>
-                  </div>
-                )}
+            {!previewStream && (
+              <div className="absolute inset-0 flex items-center justify-center text-white/30">
+                Initializing Engine...
               </div>
             )}
+
 
             {/* OVERLAYS */}
             {/* Countdown Overlay */}
@@ -292,12 +318,12 @@ export function RecorderView({
                 <div className="text-9xl font-bold text-white animate-in zoom-in duration-300" key={countdownValue}>
                   {countdownValue}
                 </div>
-                <button
+                {/* <button
                   onClick={onCancelCountdown}
                   className="mt-8 px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full border border-white/20 transition-all"
                 >
                   Cancel
-                </button>
+                </button> */}
               </div>
             )}
 
@@ -352,6 +378,10 @@ export function RecorderView({
         canRecord={canRecord}
         background={background}
         onSetBackground={onSetBackground}
+        webcamShape={webcamShape}
+        onSetWebcamShape={setWebcamShape}
+        webcamSize={webcamSize}
+        onSetWebcamSize={setWebcamSize}
       />
     </div>
   );

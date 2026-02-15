@@ -10,10 +10,14 @@ import {
   MonitorOff,
   X,
   Palette,
-  Check
+  Check,
+  Circle,
+  Square,
+  Maximize2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BackgroundOption, BACKGROUND_IMAGES, NO_BACKGROUND } from "@/lib/backgrounds";
+import { WebcamShape, WebcamSize } from "@/lib/hooks/usePiPRecording";
 
 interface ControlBarProps {
   status:
@@ -40,6 +44,11 @@ interface ControlBarProps {
   // New props
   background: BackgroundOption;
   onSetBackground: (bg: BackgroundOption) => void;
+  // Webcam Settings
+  webcamShape: WebcamShape;
+  onSetWebcamShape: (shape: WebcamShape) => void;
+  webcamSize: WebcamSize;
+  onSetWebcamSize: (size: WebcamSize) => void;
 }
 
 export function ControlBar({
@@ -55,15 +64,26 @@ export function ControlBar({
   canRecord,
   background,
   onSetBackground,
+  webcamShape,
+  onSetWebcamShape,
+  webcamSize,
+  onSetWebcamSize,
+  onReset
 }: ControlBarProps) {
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
-  const backgroundRef = useRef<HTMLDivElement>(null);
+  const [isCameraSettingsOpen, setIsCameraSettingsOpen] = useState(false);
 
-  // Close background picker when clicking outside
+  const backgroundRef = useRef<HTMLDivElement>(null);
+  const cameraSettingsRef = useRef<HTMLDivElement>(null);
+
+  // Close popovers when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (backgroundRef.current && !backgroundRef.current.contains(event.target as Node)) {
         setIsBackgroundOpen(false);
+      }
+      if (cameraSettingsRef.current && !cameraSettingsRef.current.contains(event.target as Node)) {
+        setIsCameraSettingsOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -106,11 +126,12 @@ export function ControlBar({
 
   return (
     <div className="flex items-center justify-center pb-8 relative z-50">
+
       {/* Background Picker Popover */}
       {isBackgroundOpen && (
         <div
           ref={backgroundRef}
-          className="absolute bottom-24 bg-[#1A1B1D] border border-[#2E2E30] rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300 w-[340px]"
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-[#1A1B1D] border border-[#2E2E30] rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300 w-[340px] z-50"
         >
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-white text-sm font-semibold">Select Background</h3>
@@ -127,7 +148,7 @@ export function ControlBar({
             <button
               onClick={() => {
                 onSetBackground(NO_BACKGROUND);
-                setIsBackgroundOpen(false);
+                // Keep open? or close? User might want to try others.
               }}
               className={cn(
                 "aspect-video rounded-lg border-2 overflow-hidden relative transition-all hover:scale-105",
@@ -148,10 +169,7 @@ export function ControlBar({
             {BACKGROUND_IMAGES.map((bg) => (
               <button
                 key={bg.id}
-                onClick={() => {
-                  onSetBackground(bg);
-                  setIsBackgroundOpen(false);
-                }}
+                onClick={() => onSetBackground(bg)}
                 className={cn(
                   "aspect-video rounded-lg border-2 overflow-hidden relative transition-all hover:scale-105",
                   background.id === bg.id ? "border-blue-500" : "border-white/10 hover:border-white/30"
@@ -173,6 +191,100 @@ export function ControlBar({
         </div>
       )}
 
+      {/* Camera Settings Popover */}
+      {isCameraSettingsOpen && (
+        <div
+          ref={cameraSettingsRef}
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-[#1A1B1D] border border-[#2E2E30] rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300 w-[280px] z-50"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white text-sm font-semibold">Webcam Settings</h3>
+            <button
+              onClick={() => setIsCameraSettingsOpen(false)}
+              className="text-white/40 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Webcam Frame (Shape) */}
+          <div className="mb-4">
+            <label className="text-xs text-white/50 font-medium mb-2 block uppercase tracking-wider">Frame</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (!webcamEnabled) onToggleWebcam();
+                  onSetWebcamShape("circle");
+                }}
+                className={cn(
+                  "flex items-center justify-center w-10 h-10 rounded-lg border transition-all",
+                  webcamEnabled && webcamShape === "circle" ? "bg-blue-500/20 border-blue-500 text-blue-400" : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                )}
+                title="Circle"
+              >
+                <Circle className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => {
+                  if (!webcamEnabled) onToggleWebcam();
+                  onSetWebcamShape("square");
+                }}
+                className={cn(
+                  "flex items-center justify-center w-10 h-10 rounded-lg border transition-all",
+                  webcamEnabled && webcamShape === "square" ? "bg-blue-500/20 border-blue-500 text-blue-400" : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                )}
+                title="Square"
+              >
+                <Square className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => {
+                  if (!webcamEnabled) onToggleWebcam();
+                  onSetWebcamShape("rounded_square");
+                }}
+                className={cn(
+                  "flex items-center justify-center w-10 h-10 rounded-lg border transition-all",
+                  webcamEnabled && webcamShape === "rounded_square" ? "bg-blue-500/20 border-blue-500 text-blue-400" : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                )}
+                title="Rounded"
+              >
+                <div className="w-5 h-5 border-2 border-current rounded-md" />
+              </button>
+              <button
+                onClick={() => {
+                  if (webcamEnabled) onToggleWebcam();
+                }}
+                className={cn(
+                  "flex items-center justify-center px-3 h-10 rounded-lg border transition-all ml-auto text-xs font-medium",
+                  !webcamEnabled ? "bg-red-500/20 border-red-500 text-red-400" : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                )}
+              >
+                Disable
+              </button>
+            </div>
+          </div>
+
+          {/* Webcam Size */}
+          <div>
+            <label className="text-xs text-white/50 font-medium mb-2 block uppercase tracking-wider">Size</label>
+            <div className="flex bg-black/20 p-1 rounded-lg">
+              {(["s", "m", "l"] as WebcamSize[]).map((size) => (
+                <button
+                  key={size}
+                  onClick={() => onSetWebcamSize(size)}
+                  className={cn(
+                    "flex-1 py-1.5 rounded-md text-xs font-medium transition-all",
+                    webcamSize === size ? "bg-white/10 text-white shadow-sm" : "text-white/40 hover:text-white/60"
+                  )}
+                >
+                  {size.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Control Pill */}
       <div className="bg-[#0E0E10]/90 backdrop-blur-xl border border-white/10 rounded-[20px] p-1.5 flex items-center gap-1.5 shadow-2xl ring-1 ring-black/50">
 
@@ -186,11 +298,16 @@ export function ControlBar({
           activeColorClass="bg-blue-500/20 text-blue-400 border-blue-500/20"
         />
 
-        {/* Camera */}
+        {/* Camera (Toggles Popover) */}
         <ControlButton
           label="Camera"
           active={webcamEnabled}
-          onClick={onToggleWebcam}
+          onClick={() => {
+            // If disabled, enable default? No, open settings.
+            // Toggle popover
+            setIsCameraSettingsOpen(!isCameraSettingsOpen);
+            if (isBackgroundOpen) setIsBackgroundOpen(false);
+          }}
           icon={Video}
           offIcon={VideoOff}
           activeColorClass="bg-purple-500/20 text-purple-400 border-purple-500/20"
@@ -240,7 +357,7 @@ export function ControlBar({
            Or maybe I'll replace the "Mic" button with "Record"? No.
            
            Let's look at `control-bar.tsx` again. It had a specific "Record" button.
-           I will put the "Start Recording" button to the LEFT or RIGHT of the pill?
+           I will put the "Record" button to the LEFT or RIGHT of the pill?
            The user said "re-design ... same as in attached image".
            If I remove the record button, they can't record.
            I'll assume the attached image is valid for the *toggles*.
@@ -260,7 +377,10 @@ export function ControlBar({
         <ControlButton
           label="BG"
           active={isBackgroundOpen || background.id !== "none"}
-          onClick={() => setIsBackgroundOpen(!isBackgroundOpen)}
+          onClick={() => {
+            setIsBackgroundOpen(!isBackgroundOpen);
+            if (isCameraSettingsOpen) setIsCameraSettingsOpen(false);
+          }}
           icon={Palette}
           activeColorClass="bg-orange-500/20 text-orange-400 border-orange-500/20"
         />
@@ -309,6 +429,7 @@ export function ControlBar({
           if (screenShareEnabled) onToggleScreenShare();
           // Also close background?
           if (isBackgroundOpen) setIsBackgroundOpen(false);
+          if (isCameraSettingsOpen) setIsCameraSettingsOpen(false);
           // Also reset?
           if (onReset) onReset();
         }}
