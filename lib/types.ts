@@ -58,3 +58,7 @@ export type PermissionErrorType =
   | 'UNKNOWN'
   | null;
 
+export type WebcamShape = "circle" | "square" | "rounded_square";
+export type WebcamSize = "s" | "m" | "l";
+
+

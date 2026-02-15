@@ -1,9 +1,9 @@
-import RecordingInterface from "./components/recording-interface";
+import ScreenRecorder from "./components/screen-recorder";
 
 const Page = () => {
   return (
     <>
-      <RecordingInterface />
+      <ScreenRecorder />
     </>
   );
 };
