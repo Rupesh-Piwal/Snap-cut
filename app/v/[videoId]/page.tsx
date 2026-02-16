@@ -73,6 +73,11 @@ export default async function VideoSharePage({ params }: PageProps) {
                             autoPlay={true}
                         />
                     </div>
+
+                </div>
+
+                {/* SIDEBAR: Description & Links */}
+                <div className="col-span-1 md:col-span-4 space-y-8">
                     {/* Description */}
                     <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6">
                         <h3 className="text-lg font-semibold text-white mb-3 border-b border-white/10 pb-3">
@@ -82,10 +87,6 @@ export default async function VideoSharePage({ params }: PageProps) {
                             {video.description || "No description provided."}
                         </p>
                     </div>
-                </div>
-
-                {/* SIDEBAR: Description & Links */}
-                <div className="col-span-1 md:col-span-4 space-y-8">
 
                     {/* Links Section */}
                     <div>

@@ -344,6 +344,8 @@ export function ControlBar({
           </div>
         )}
 
+
+
         <div className="bg-[#0E0E10]/90 backdrop-blur-xl border border-white/10 rounded-[20px] p-1.5 flex items-center gap-1.5 shadow-2xl ring-1 ring-black/50">
           <ControlButton
             label="Screen"

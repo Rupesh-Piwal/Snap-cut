@@ -98,6 +98,7 @@ export function RecorderView({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
+
   useEffect(() => {
     if (containerRef.current && !isInitialized) {
       setIsInitialized(true);
@@ -286,6 +287,7 @@ export function RecorderView({
               onPointerLeave={handlePointerUp}
             />
 
+            {/* UI Overlays — outside the scaling wrapper, positioned relative to container */}
             {!previewStream && (
               <div className="absolute inset-0 flex items-center justify-center text-white/30">
                 Initializing Engine...
@@ -305,9 +307,9 @@ export function RecorderView({
 
             <div className="absolute top-6 left-6 z-10 flex flex-col gap-3">
               {status === "recording" && (
-                <div className="flex items-center gap-2.5 bg-red-500/15 text-red-400 px-4 py-2 rounded-full backdrop-blur-xl border border-red-500/20 shadow-lg animate-in slide-in-from-top-2 fade-in duration-300">
+                <div className="flex items-center gap-2.5 bg-red-500/15 text-red-400 px-2 py-1 rounded-full backdrop-blur-xl border border-red-500/20 shadow-lg animate-in slide-in-from-top-2 fade-in duration-300">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-                  <span className="text-sm font-semibold tracking-wide">
+                  <span className="text-sm font-semibold tracking-wider">
                     REC
                   </span>
                 </div>
@@ -360,6 +362,6 @@ export function RecorderView({
         onSetWebcamSize={setWebcamSize}
         micStream={micStream}
       />
-    </div>
+    </div >
   );
 }
