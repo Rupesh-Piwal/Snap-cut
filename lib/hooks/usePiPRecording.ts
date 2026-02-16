@@ -286,5 +286,6 @@ export const usePiPRecording = () => {
         setWebcamSize,
         webcamPosition,
         setWebcamPosition,
+        microphoneStream: microphoneStreamRef.current,
     };
 };

@@ -50,6 +50,7 @@ export default function ScreenRecorder() {
         previewVideoRef,
         screenSourceRef,
         cameraSourceRef,
+        microphoneStream,
     } = usePiPRecording();
 
     const [reviewState, setReviewState] = useState<ReviewState>("review");
@@ -156,6 +157,7 @@ export default function ScreenRecorder() {
                     previewVideoRef={previewVideoRef}
                     screenSourceRef={screenSourceRef}
                     cameraSourceRef={cameraSourceRef}
+                    micStream={microphoneStream}
                 />
             </main>
         );

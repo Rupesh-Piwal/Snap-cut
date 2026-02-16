@@ -83,74 +83,67 @@ export const BACKGROUND_GRADIENTS: BackgroundOption[] = [
 
 export const BACKGROUND_IMAGES: BackgroundOption[] = [
     {
-        id: "image-office",
-        label: "Modern Office",
+        id: "image-1",
+        label: "Background 1",
         type: "image",
-        value: "https://images.unsplash.com/photo-1511300636408-a63a89df3482?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGRlc2t0b3AlMjB3YWxscGFwZXJzfGVufDB8fDB8fHww",
-        preview: "https://images.unsplash.com/photo-1511300636408-a63a89df3482?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGRlc2t0b3AlMjB3YWxscGFwZXJzfGVufDB8fDB8fHww"
+        value: "/backgrounds/1.png",
+        preview: "/backgrounds/1.png"
     },
     {
-        id: "image-desk",
-        label: "Wood Desk",
+        id: "image-2",
+        label: "Background 2",
         type: "image",
-        value: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZGVza3RvcCUyMHdhbGxwYXBlcnN8ZW58MHx8MHx8fDA%3D",
-        preview: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZGVza3RvcCUyMHdhbGxwYXBlcnN8ZW58MHx8MHx8fDA%3D"
+        value: "/backgrounds/2.png",
+        preview: "/backgrounds/2.png"
     },
     {
-        id: "image-abstract-geo",
-        label: "Abstract Geo",
+        id: "image-3",
+        label: "Background 3",
         type: "image",
-        value: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1920&auto=format&fit=crop",
-        preview: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=200&auto=format&fit=crop"
+        value: "/backgrounds/3.png",
+        preview: "/backgrounds/3.png"
     },
     {
-        id: "image-living-room",
-        label: "Cozy Room",
+        id: "image-4",
+        label: "Background 4",
         type: "image",
-        value: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=1920&auto=format&fit=crop",
-        preview: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=200&auto=format&fit=crop"
+        value: "/backgrounds/4.png",
+        preview: "/backgrounds/4.png"
     },
     {
-        id: "image-nature",
-        label: "Deep Forest",
+        id: "image-5",
+        label: "Background 5",
         type: "image",
-        value: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1920&auto=format&fit=crop",
-        preview: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=200&auto=format&fit=crop"
+        value: "/backgrounds/5.png",
+        preview: "/backgrounds/5.png"
     },
     {
-        id: "image-city",
-        label: "City Lights",
+        id: "image-6",
+        label: "Background 6",
         type: "image",
-        value: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=1920&auto=format&fit=crop",
-        preview: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=200&auto=format&fit=crop"
+        value: "/backgrounds/6.png",
+        preview: "/backgrounds/6.png"
     },
     {
-        id: "image-studio",
-        label: "Photo Studio",
+        id: "image-7",
+        label: "Background 7",
         type: "image",
-        value: "https://images.unsplash.com/photo-1590486803833-1c5dc8ce34ba?q=80&w=1920&auto=format&fit=crop",
-        preview: "https://images.unsplash.com/photo-1590486803833-1c5dc8ce34ba?q=80&w=200&auto=format&fit=crop"
+        value: "/backgrounds/7.jpg",
+        preview: "/backgrounds/7.jpg"
     },
     {
-        id: "image-library",
-        label: "Library",
+        id: "image-8",
+        label: "Background 8",
         type: "image",
-        value: "https://images.unsplash.com/photo-1507842217121-9e9628d5a235?q=80&w=1920&auto=format&fit=crop",
-        preview: "https://images.unsplash.com/photo-1507842217121-9e9628d5a235?q=80&w=200&auto=format&fit=crop"
+        value: "/backgrounds/8.jpg",
+        preview: "/backgrounds/8.jpg"
     },
     {
-        id: "image-coffee",
-        label: "Coffee Shop",
+        id: "image-9",
+        label: "Background 9",
         type: "image",
-        value: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1920&auto=format&fit=crop",
-        preview: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200&auto=format&fit=crop"
-    },
-    {
-        id: "image-blur",
-        label: "Soft Blur",
-        type: "image",
-        value: "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1920&auto=format&fit=crop",
-        preview: "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=200&auto=format&fit=crop"
+        value: "/backgrounds/9.png",
+        preview: "/backgrounds/9.png"
     }
 ];
 
