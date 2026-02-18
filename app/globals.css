@@ -47,7 +47,6 @@
 }
 
 @keyframes ping {
-
   75%,
   100% {
     transform: scale(2);
@@ -73,6 +72,12 @@
   }
 }
 
+.quote {
+  font-family: var(--font-serif), serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient 3s ease infinite;
@@ -80,17 +85,18 @@
 
 /* Custom Utilities for the Dark/Sexy Look */
 @layer utilities {
-
   /* Wireframe / Technical Utilities */
   .bg-stripes {
-    background-image: linear-gradient(45deg,
-        rgba(255, 255, 255, 0.05) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(255, 255, 255, 0.05) 50%,
-        rgba(255, 255, 255, 0.05) 75%,
-        transparent 75%,
-        transparent);
+    background-image: linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.05) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0.05) 75%,
+      transparent 75%,
+      transparent
+    );
     background-size: 8px 8px;
   }
 
@@ -143,14 +149,13 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-
 /* FORCING DARK MODE VARIABLES */
 :root {
   /* Foreground: Soft white for text */
   --foreground: oklch(0.92 0 0);
 
   /* Background: Deep Black/Gray */
-  --background: oklch(0.10 0 0);
+  --background: oklch(0.1 0 0);
 
   /* Card: Slightly lighter black */
   --card: oklch(0.13 0 0);
@@ -194,7 +199,7 @@
 
   --radius: 0.5rem;
 
-  --sidebar: oklch(0.10 0 0);
+  --sidebar: oklch(0.1 0 0);
   --sidebar-foreground: oklch(0.92 0 0);
   --sidebar-primary: oklch(0.98 0 0);
   --sidebar-primary-foreground: oklch(0.1 0 0);
@@ -206,7 +211,7 @@
 
 /* Ensure dark class uses the same values or just inherits since we want dark by default */
 .dark {
-  --background: oklch(0.10 0 0);
+  --background: oklch(0.1 0 0);
   --foreground: oklch(0.92 0 0);
   --card: oklch(0.13 0 0);
   --card-foreground: oklch(0.92 0 0);
@@ -227,7 +232,6 @@
   --ring: oklch(0.8 0 0);
 }
 
-
 html {
   scroll-behavior: smooth;
 }
@@ -239,6 +243,8 @@ html {
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }

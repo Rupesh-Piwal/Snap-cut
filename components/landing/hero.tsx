@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HeroVideoDialog } from "../ui/hero-video-dialog";
+import { TextAnimate } from "../ui/text-animate";
 
 export function Hero() {
   return (
@@ -18,6 +19,7 @@ export function Hero() {
 
           {/* Bottom Right */}
           <span className="absolute bottom-[-1px] right-[-1px] w-2 h-2 border-b border-r border-white/15" />
+
           {/* Tag */}
           <div className="mb-8 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/5 font-mono text-xs text-white">
             <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
@@ -25,13 +27,11 @@ export function Hero() {
           </div>
 
           {/* Heading */}
-          <h1 className="text-5xl md:text-6xl font-sans font-bold text-white mb-6 tracking-tight max-w-3xl">
-            Record Your Screen <br />
-            Share Instantly.
-          </h1>
-
+          <TextAnimate animation="blurInUp" by="character" once>
+            {"Record Your Screen\nShare Instantly."}
+          </TextAnimate>
           {/* Subtext */}
-          <p className="font-mono text-white/60 mb-10 max-w-lg text-sm md:text-base leading-relaxed">
+          <p className="font-mono text-slate-300/90 mb-10 max-w-lg text-sm md:text-base leading-relaxed">
             Create high-quality screen recordings & <br />
             share them instantly with a link.
           </p>
@@ -43,7 +43,20 @@ export function Hero() {
               href="/record"
               className="relative inline-block group cursor-pointer"
             >
-              <button className="relative px-8 py-3 bg-transparent border border-white/20 text-white font-mono text-lg hover:bg-white/5 transition-colors cursor-pointer">
+              <button
+                className="
+  relative px-10 py-3
+  text-white text-lg font-medium
+  border border-white/15
+  bg-white/5
+  backdrop-blur-sm
+  rounded-md
+  transition-all duration-300
+  hover:bg-white/10
+  hover:border-white/30
+  hover:shadow-[0_0_40px_rgba(168,85,247,0.25)] cursor-pointer
+"
+              >
                 Capture Screen
               </button>
 
