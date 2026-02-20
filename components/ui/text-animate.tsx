@@ -201,7 +201,7 @@ const TextAnimateBase = ({
         exit="exit"
         viewport={{ once }}
         className={cn(
-          "whitespace-pre-wrap text-5xl md:text-6xl text-white mb-6 tracking-wide max-w-3xl quote",
+          "whitespace-pre-wrap text-4xl md:text-6xl text-white mb-6 tracking-wide max-w-3xl quote",
           className,
         )}
         aria-label={accessible ? text : undefined}

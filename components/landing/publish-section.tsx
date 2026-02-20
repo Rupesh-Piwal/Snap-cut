@@ -252,7 +252,7 @@ export function PublishSection() {
           </h2>
 
           {/* Subtext */}
-          <p className="text-base md:text-lg text-white/40 font-light max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm md:text-lg text-gray-300/80 font-light max-w-2xl mx-auto font-mono">
             Your videos are meant to be viewed. Share them instantly with a
             link.
           </p>

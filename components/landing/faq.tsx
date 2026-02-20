@@ -50,10 +50,10 @@ export function Faq() {
             </span>
             FAQ
           </div>
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-4">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight text-white mb-5 font-[family-name:var(--font-serif)] italic">
             Frequently Asked Questions
           </h2>
-          <p className="text-lg text-white/40 font-light">
+          <p className="text-sm md:text-lg text-gray-300/80 font-light max-w-2xl mx-auto font-mono">
             Everything you need to know about SnapCut.
           </p>
         </AnimatedSection>

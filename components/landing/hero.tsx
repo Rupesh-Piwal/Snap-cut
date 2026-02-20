@@ -37,7 +37,7 @@ export function Hero() {
             {"Record Your Screen\nShare Instantly."}
           </TextAnimate>
           {/* Subtext */}
-          <p className=" text-slate-300/90 mb-10 max-w-lg text-sm md:text-[16px] tracking-wide font-thin">
+          <p className=" text-slate-300/90 mb-10 max-w-lg text-sm md:text-[16px] font-thin font-mono">
             Create high-quality screen recordings & <br />
             share them instantly with a link
           </p>

@@ -73,7 +73,7 @@ export function Features() {
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight text-white mb-5 font-[family-name:var(--font-serif)] italic">
             ENGINEERED For Speed
           </h2>
-          <p className="text-sm md:text-lg text-gray-300/80 font-light max-w-2xl mx-auto">
+          <p className="text-sm md:text-lg text-gray-300/80 font-light max-w-2xl mx-auto font-mono">
             Every pixel designed to help you move faster.
           </p>
         </AnimatedSection>
@@ -84,7 +84,7 @@ export function Features() {
               key={i}
               delay={0.1 + i * 0.1}
               className={cn(
-                "group relative p-8 h-full bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all duration-300 overflow-hidden",
+                "group relative md:p-8 py-2 h-full bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all duration-300 overflow-hidden text-center md:text-start rounded-2xl md:rounded-none",
                 feature.className,
               )}
             >
@@ -101,10 +101,10 @@ export function Features() {
                 <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white group-hover:text-[#8B5CF6] group-hover:border-[#8B5CF6]/30 transition-colors duration-300">
                   <feature.icon className="h-6 w-6" strokeWidth={1.5} />
                 </div>
-                <h3 className="mb-3 text-xs md:text-xl font-medium text-white group-hover:text-[#8B5CF6] transition-colors duration-300">
+                <h3 className="mb-3 text-[10px] md:text-xl font-thin md:font-medium text-white group-hover:text-[#8B5CF6] transition-colors duration-300 font-mono">
                   {feature.title}
                 </h3>
-                <p className="hidden md:flex text-sm text-white/40 leading-relaxed font-light">
+                <p className="hidden md:flex text-sm text-white/40 leading-relaxed font-mono font-thin">
                   {feature.description}
                 </p>
               </div>
