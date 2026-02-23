@@ -34,7 +34,7 @@ const features1 = [
   },
 ];
 
-const CYCLE_DURATION = 4000;
+const CYCLE_DURATION = 2000;
 
 function FeatureColumn({
   icon: Icon,
@@ -128,7 +128,7 @@ const SLIDE_IMAGES = [
   "/how-it-works/Add Context.png",
   "/how-it-works/Share Links.png",
 ];
-const SLIDE_INTERVAL = 3000; // 3 seconds per image
+const SLIDE_INTERVAL = 2000; // 3 seconds per image
 
 /* ─── Export Preview Card (mock UI) ─────────────────────────── */
 function ExportPreviewCard() {
