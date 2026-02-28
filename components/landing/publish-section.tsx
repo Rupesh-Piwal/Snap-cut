@@ -7,6 +7,7 @@ import {
   FileVideoIcon,
   LinkBreakIcon,
 } from "@phosphor-icons/react";
+import Image from "next/image";
 import { useParallax } from "@/hooks/use-parallax";
 
 const features1 = [
@@ -34,7 +35,7 @@ const features1 = [
   },
 ];
 
-const CYCLE_DURATION = 2000;
+const CYCLE_DURATION = 5000;
 
 function FeatureColumn({
   icon: Icon,
@@ -53,11 +54,10 @@ function FeatureColumn({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative flex flex-col items-start text-left p-6 transition-all duration-500 cursor-pointer w-full ${
-        isActive
-          ? "border border-white/6 bg-white/2"
-          : "opacity-50 border border-transparent"
-      }`}
+      className={`group relative flex flex-col items-start text-left p-6 transition-all duration-500 cursor-pointer w-full ${isActive
+        ? "border border-white/6 bg-white/2"
+        : "opacity-50 border border-transparent"
+        }`}
     >
       {/* ── Corner accents (active only) ── */}
       {isActive && (
@@ -75,32 +75,29 @@ function FeatureColumn({
 
       {/* Icon */}
       <div
-        className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors duration-300 ${
-          isActive
-            ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 text-[#8B5CF6]"
-            : "bg-white/5 border-white/10 text-white/60"
-        }`}
+        className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg border transition-colors duration-300 ${isActive
+          ? "bg-[#8B5CF6]/10 border-[#8B5CF6]/30 text-[#8B5CF6]"
+          : "bg-white/5 border-white/10 text-white/60"
+          }`}
       >
         <Icon size={22} weight="duotone" />
       </div>
 
       <h3
-        className={`text-xs md:text-base font-semibold mb-2 transition-colors duration-300 ${
-          isActive ? "text-white" : "text-white/60"
-        }`}
+        className={`text-xs md:text-base font-semibold mb-2 transition-colors duration-300 ${isActive ? "text-white" : "text-white/60"
+          }`}
       >
         {title}
       </h3>
       <p
-        className={`hidden md:flex text-sm leading-relaxed font-light transition-colors duration-300 ${
-          isActive ? "text-white/50" : "text-white/30"
-        }`}
+        className={`hidden md:flex text-sm leading-relaxed font-light transition-colors duration-300 ${isActive ? "text-white/50" : "text-white/30"
+          }`}
       >
         {description}
       </p>
 
       {/* Progress bar */}
-      <div className="mt-5 w-12 h-[3px] rounded-full bg-white/10 overflow-hidden">
+      <div className="mt-5 w-12 h-0.75 rounded-full bg-white/10 overflow-hidden">
         {isActive && (
           <div
             className="h-full bg-white/50 rounded-full"
@@ -128,7 +125,7 @@ const SLIDE_IMAGES = [
   "/how-it-works/Add Context.png",
   "/how-it-works/Share Links.png",
 ];
-const SLIDE_INTERVAL = 2000; // 3 seconds per image
+const SLIDE_INTERVAL = 5000;
 
 /* ─── Export Preview Card (mock UI) ─────────────────────────── */
 function ExportPreviewCard() {
@@ -161,14 +158,22 @@ function ExportPreviewCard() {
       {/* Card body */}
       <div className="relative rounded-2xl bg-[#0d1117]/90 backdrop-blur-xl border border-white/10 overflow-hidden">
         {/* ── Video preview area with image slideshow ── */}
-        <div className="relative h-56 sm:h-72 md:h-150 bg-[#0a0a0a] overflow-hidden">
-          {/* Slideshow images with crossfade */}
+        <div className="relative h-56 sm:h-72 md:h-150 overflow-hidden">
+          <Image
+            src="/how-it-works/how-it-works-bg.png"
+            alt="Background"
+            fill
+            quality={100}
+            className="object-cover object-center pointer-events-none"
+            priority
+          />
           {SLIDE_IMAGES.map((src, index) => (
-            <img
+            <Image
               key={src}
               src={src}
-              alt={`SnapCut demo ${index + 1}`}
-              className="absolute inset-0 w-full h-full aspect-video transition-opacity duration-700 ease-in-out"
+              alt=""
+              fill
+              className="p-10 object-cover transition-opacity duration-700 z-10 pointer-events-none"
               style={{ opacity: index === currentSlide ? 1 : 0 }}
             />
           ))}
